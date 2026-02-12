@@ -187,3 +187,10 @@ Preguntas que responde el gráfico.
 ¿En qué grados el rendimiento bueno no se traduce en permanencia?
 ¿Que grados requieren de una intervención prioritaria?
 ¿Hay grados donde el abandono no esté ligado a la permanencia?
+
+### Explicaabilidad del abandono
+¿El abandono se dispara tras determinadas asignaturas o cursos (por ejemplo matemáticas el primer año)?
+¿El abandono se relaciona más con suspenso alto, no presentación o ambos?
+
+### Extra:
+Comparar resultados entre asignaturas del mismo plan de estudios con otras Universidades. Demostrar caso UPO - Cálculo
