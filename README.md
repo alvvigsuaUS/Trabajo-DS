@@ -111,11 +111,11 @@ Los datos estan sacados del portal de transparencia de la universidad de sevilla
     │  ├── satisfaccion_2020_2021_grado.pdf
     │  └── satisfaccion_2021_2022_grado.pdf
     └── master
-    ├── satisfaccion_2017_2018_master.pdf
-    ├── satisfaccion_2018_2019_master.pdf
-    ├── satisfaccion_2019_2020_master.pdf
-    ├── satisfaccion_2020_2021_master.pdf
-    └── satisfaccion_2021_2022_master.pdf
+    │  ├── satisfaccion_2017_2018_master.pdf
+    │  ├── satisfaccion_2018_2019_master.pdf
+    │  ├── satisfaccion_2019_2020_master.pdf
+    │  ├── satisfaccion_2020_2021_master.pdf
+    │  └── satisfaccion_2021_2022_master.pdf
 ```
 
 #### Preview de satisfacción grado (2021-2022)
