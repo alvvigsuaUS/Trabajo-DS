@@ -129,3 +129,69 @@ Los datos estan sacados del portal de transparencia de la universidad de sevilla
 ![Preview de satisfacción máster (2021-2022)](images/captura%20satisfaccion%20master%201.png)
 
 ![Preview de satisfacción máster (2021-2022)](images/captura%20satisfaccion%20master%202.png)
+
+
+# Grupal
+
+## Años
+
+17-18 al 23-24 para:
+
+- Abandono_rendimiento
+- matriculados_aprobado
+
+17-18 al 21-22 para:
+
+- Satisfaccion
+
+## Preguntas grupales
+
+### Presentación a examen y éxito académico
+
+### Evolución temporal del rendimiento. Por el profesorado. Explicar con variables que no están
+
+### Preguntas de Pablo
+
+#### ¿Podemos considerar el porcentaje de No presentados como indicador de dificultad?
+
+##### Un mayor porcentaje de no presentados se asocia con un mayor porcentaje de suspensos
+
+##### Una mayor proporción de estudiantes presentados se asocia a una mayor tasa de superación
+
+### Predecir la tasa de superación
+
+### Las titulaciones pueden agruparse en clústeres definidos que faciliten la intervención institucional
+
+# Individuales
+
+
+## Pablo
+
+### Visualización de la calidad de la evaluación
+#### Dispersión por asignatura (scatter plot): en el eje x la tasa de presentación y en el eje y tasa de suspenso, de manera que :
+- El tamaño del punto indica el número de matriculados.
+- Para interpretarlo
+  - Arriba derecha: muchos presentados y muchos suspensos (asignatura dura, ADDA)
+  - Arriba izquierda: se presentan pocos y suspenden mucho (miedo a suspender, FFI)
+  - Izquierda abajo: se presentan pocos y aprueban muchos (la gente se presenta solo si la lleva bien, CIMSI)
+  - Derecha abajo: se presentan muchos y suspenden pocos (Aprueba todo el mundo, estadística)
+- Se pueden destacar asignaturas problemáticas (muchos matriculados y malos resultados), que se evitan...
+
+##### Preguntas que responde el gráfico
+¿Qué asignaturas son las más duras (muchos matriculados y alto número de suspensos)?
+¿Dónde está el problema principal?¿En las asignaturas donde no se presentan los estudiantes o donde se presentan pero suspenden?
+¿Hay asignaturas que se eviten (pocos presentados respecto de los matriculados) aunque luego aprueben la mayoría que se presenten?
+### Rendimiento vs abandono
+
+#### Dispersión por grado (scatter plot): en el eje x la tasa de rendimiento y en el eje y tasa de abandono, de manera que :
+- Arriba izquierda: alto abandono y bajo rendimiento. Peor caso posible. Puede deberse a un problema estructural, expectativas no cumplidas, dificultad (comunicación)
+- Arriba derecha: alto rendimiento y alto abandono. Caso curioso que puede deberse a:
+  - Abandono sesgado/selectivo: abandonan quienes van muy mal y se quedan los que rinden bien (Matemáticas)
+  - Abandono por causas no académicas: horarios, compatibilidad laboral, traslados, coste... (Doble grado de derecho y filosofía)
+- Abajo izquierda: bajo rendimiento y bajo abandono. Los estudiantes repiten y van arrastrando, se matriculan y aprueban poco (doble grado de matemáticas y física)
+- Abajo a la derecha: bajo abandono y alto rendimiento (caso ideal, el estudiantado progresa y permanece. Por ejemplo, ADE)
+
+Preguntas que responde el gráfico.
+¿En qué grados el rendimiento bueno no se traduce en permanencia?
+¿Que grados requieren de una intervención prioritaria?
+¿Hay grados donde el abandono no esté ligado a la permanencia?
