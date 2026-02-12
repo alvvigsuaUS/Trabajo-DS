@@ -215,3 +215,9 @@ Comparar resultados entre asignaturas del mismo plan de estudios con otras Unive
 - ¿Influye el "riesgo" académico en la elección?: ¿Tienden los hombres o mujeres a demandar titulaciones con menores tasas de abandono (aversión al riesgo académico) o existe una correlación con la Rama de Conocimiento?.
 - ¿Es el rendimiento un predictor de la demanda?: ¿Tienen las carreras con mayor **Tasa de Rendimiento** una demanda femenina/masculina significativamente superior?
 - Identificación de brechas: ¿Existen titulaciones con bajo abandono que, a pesar de su "facilidad" estadística, siguen sin atraer a un público en concreto (masculino o femenino)?
+
+## Juan
+
+### La desconexión entre satisfacción y éxito
+
+Análisis de la correlación entre la satisfacción del alumnado y los resultados académicos objetivos. Cruce de los datos de satisfacción percibida con los indicadores de rendimiento, abandono y tasa de aprobados. El objetivo es determinar si la valoración que el estudiante hace de su formación está vinculada a su éxito académico o si existen desconexiones significativas entre el sentimiento del alumnado y sus resultados reales.
