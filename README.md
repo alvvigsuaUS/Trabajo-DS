@@ -131,39 +131,31 @@ Los datos estan sacados del portal de transparencia de la universidad de sevilla
 ![Preview de satisfacción máster (2021-2022)](images/captura%20satisfaccion%20master%202.png)
 
 
-# Grupal
+# Preguntas grupales
 
-## Años
+- Presentación a examen y éxito académico
 
-17-18 al 23-24 para:
+- Evolución temporal del rendimiento. Por el profesorado. Explicar con variables que no están
 
-- Abandono_rendimiento
-- matriculados_aprobado
+- ¿Podemos considerar el porcentaje de No presentados como indicador de dificultad?
 
-17-18 al 21-22 para:
+- Un mayor porcentaje de no presentados se asocia con un mayor porcentaje de suspensos
 
-- Satisfaccion
+- Una mayor proporción de estudiantes presentados se asocia a una mayor tasa de superación
 
-## Preguntas grupales
+- Predecir la tasa de superación
 
-### Presentación a examen y éxito académico
-
-### Evolución temporal del rendimiento. Por el profesorado. Explicar con variables que no están
-
-### Preguntas de Pablo
-
-#### ¿Podemos considerar el porcentaje de No presentados como indicador de dificultad?
-
-##### Un mayor porcentaje de no presentados se asocia con un mayor porcentaje de suspensos
-
-##### Una mayor proporción de estudiantes presentados se asocia a una mayor tasa de superación
-
-### Predecir la tasa de superación
-
-### Las titulaciones pueden agruparse en clústeres definidos que faciliten la intervención institucional
+- Las titulaciones pueden agruparse en clústeres definidos que faciliten la intervención institucional
 
 # Individuales
 
+## Alvaro
+
+### Visualizacion de tendencias generadas por factores externos significativos
+
+Se pretende realizar un pequeño estudio de los datos de rendimiento, abandono y ratio de matriculados aprobados para ver si hay algun tipo de cambio posiblemente provocado por factores externos significativos como el covid o la entrada de la IA.
+
+Para responder a esta pregunta se hará una busqueda de grandes eventos a lo largo de los años disponibles y se estudiaran los cambios en los distintos grados ya que puede que algunos eventos afecten en mayor o menor medida a distintos grados.
 
 ## Pablo
 
