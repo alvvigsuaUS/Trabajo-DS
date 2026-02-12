@@ -194,3 +194,24 @@ Preguntas que responde el gráfico.
 
 ### Extra:
 Comparar resultados entre asignaturas del mismo plan de estudios con otras Universidades. Demostrar caso UPO - Cálculo
+
+## María 
+
+## Impacto de la trayectoria académica en la demanda (Con perspectiva de Género)
+¿Los resultados académicos históricos (tasas de rendimiento y abandono) actúan como un factor disuasorio o atrayente para el alumnado de nuevo ingreso del curso 2023/2024?
+
+### Posible visualización (scatter plot): en el eje x la tasa de abandono histórica y en el eje y el volumen de demanda 2023/24, de manera que:
+- Permite distinguir titulaciones de "éxito", "vocacionales", "nicho" y "en crisis"
+
+### Posible visualización (facet grid): Correlación de Demanda vs. Abandono por Género
+- Cada panel sería una Rama de Conocimiento (Artes, Ciencias, Salud, Sociales, Ingeniería).
+- Elementos del gráfico:
+  - Eje X: Tasa de Abandono histórica (del dataset 1.11).
+  - Eje Y: Volumen de Demanda 2023/24.
+  - Capas de Datos (Geoms): Se representan dos líneas de tendencia (regresiones locales o lineales) por cada panel: una para la demanda femenina y otra para la masculina.
+  - Puntos: Representan cada titulación individual, codificando el Rendimiento mediante la transparencia (alpha).
+
+### Preguntas que respondería este análisis:
+- ¿Influye el "riesgo" académico en la elección?: ¿Tienden los hombres o mujeres a demandar titulaciones con menores tasas de abandono (aversión al riesgo académico) o existe una correlación con la Rama de Conocimiento?.
+- ¿Es el rendimiento un predictor de la demanda?: ¿Tienen las carreras con mayor **Tasa de Rendimiento** una demanda femenina/masculina significativamente superior?
+- Identificación de brechas: ¿Existen titulaciones con bajo abandono que, a pesar de su "facilidad" estadística, siguen sin atraer a un público en concreto (masculino o femenino)?
