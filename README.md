@@ -197,7 +197,7 @@ Comparar resultados entre asignaturas del mismo plan de estudios con otras Unive
 
 ## María 
 
-## Impacto de la trayectoria académica en la demanda (Con perspectiva de Género)
+### Impacto de la trayectoria académica en la demanda (Con perspectiva de Género)
 ¿Los resultados académicos históricos (tasas de rendimiento y abandono) actúan como un factor disuasorio o atrayente para el alumnado de nuevo ingreso del curso 2023/2024?
 
 ### Posible visualización (scatter plot): en el eje x la tasa de abandono histórica y en el eje y el volumen de demanda 2023/24, de manera que:
