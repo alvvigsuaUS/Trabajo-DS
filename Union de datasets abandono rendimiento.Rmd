@@ -1,0 +1,263 @@
+---
+title: "Union de datasets abandono rendimiento"
+output: html_document
+---
+
+# Carga de librerias necesarias
+
+```{r}
+library(readxl)
+library(tidyverse)
+```
+
+# Configuracion
+
+```{r}
+base_dir = "Directoriobase"
+```
+
+
+# Conversion de Excel a CSV
+
+```{r}
+leer_excel_abandono <- function(base_dir, nombre_archivo) {
+  ruta_excel <- file.path(base_dir, "abandono", nombre_archivo)
+  datos <- read_excel(ruta_excel, sheet = 1)
+  
+  cadena_anyo <- sub(".*(\\d{4}_\\d{4}).*", "\\1", nombre_archivo)
+  
+  datos_limpios <- datos %>%
+    drop_na() %>%
+    mutate_at(vars(3), as.double) %>%
+    mutate_at(vars(4, 5), as.integer) %>%
+    rename(
+      "Cod_Titulacion" = 1,
+      "Titulacion" = 2,
+      "Tasa_Abandono" = 3,
+      "Alumnos_Abandonan" = 4,
+      "Alumnos_Matriculados" = 5
+    ) %>%
+    mutate(Año = cadena_anyo) %>%
+    drop_na()
+  
+  return(datos_limpios)
+}
+
+leer_excel_rendimiento <- function(base_dir, nombre_archivo) {
+  ruta_excel <- file.path(base_dir, "rendimiento", nombre_archivo)
+  datos <- read_excel(ruta_excel, sheet = 1)
+  
+  cadena_anyo <- sub(".*(\\d{4}_\\d{4}).*", "\\1", nombre_archivo)
+  
+  datos_limpios <- datos %>%
+    drop_na() %>%
+    mutate_at(vars(3), as.double) %>%
+    mutate_at(vars(4, 5), as.integer) %>%
+    rename(
+      "Cod_Titulacion" = 1,
+      "Titulacion" = 2,
+      "Tasa_Rendimiento" = 3,
+      "Alumnos_Egresados" = 4,
+      "Alumnos_Matriculados" = 5
+    ) %>%
+    mutate(Año = cadena_anyo) %>%
+    drop_na()
+  
+  return(datos_limpios)
+}
+leer_excel_mixto <- function(base_dir, nombre_archivo) {
+  
+  ruta_excel <- file.path(base_dir, nombre_archivo)
+  datos <- read_excel(ruta_excel, sheet = 2)
+  
+  # Extraemos el año del nombre del archivo
+  cadena_anyo <- sub(".*(\\d{4}_\\d{4}).*", "\\1", nombre_archivo)
+  
+  datos_limpios <- datos %>%
+    drop_na() %>%
+    # Convertimos las tasas (columnas 4 y 7) a decimales
+    mutate_at(vars(4, 7), as.double) %>%
+    # Convertimos los numeradores y denominadores (columnas 5, 6, 8 y 9) a enteros
+    mutate_at(vars(5, 6, 8, 9), as.integer) %>%
+    rename(
+      "Cod_Centro" = 1,
+      "Cod_Titulacion" = 2,
+      "Titulacion" = 3,
+      "Tasa_Rendimiento" = 4,
+      "Alumnos_Egresados" = 5,           # 1.6 (numerador)
+      "Matriculados_Rendimiento" = 6,    # 1.6 (denominador)
+      "Tasa_Abandono" = 7,
+      "Alumnos_Abandonan" = 8,           # 1.11 (numerador)
+      "Matriculados_Abandono" = 9        # 1.11 (denominador)
+    ) %>%
+    mutate(Año = cadena_anyo) %>%
+    drop_na()
+  
+  return(datos_limpios)
+}
+```
+
+# Procesado de abandono
+
+```{r}
+tipo_carpeta <- "abandono"
+
+archivos <- list.files(
+  path = file.path(base_dir, tipo_carpeta), 
+  pattern = "\\.xlsx$",
+  full.names = FALSE
+)
+
+lista_datos <- lapply(archivos, function(archivo) {
+  leer_excel_abandono(base_dir, nombre_archivo = archivo)
+})
+
+
+lista_ids <- lapply(lista_datos, function(df) {
+  df$Cod_Titulacion
+})
+
+ids_comunes <- Reduce(intersect, lista_ids)
+
+datos_consolidados_abandono <- bind_rows(lista_datos) %>%
+  filter(Cod_Titulacion %in% ids_comunes)
+```
+
+# Procesado de rendimiento
+
+```{r}
+tipo_carpeta <- "rendimiento"
+
+archivos <- list.files(
+  path = file.path(base_dir, tipo_carpeta), 
+  pattern = "\\.xlsx$",
+  full.names = FALSE
+)
+
+lista_datos <- lapply(archivos, function(archivo) {
+  leer_excel_rendimiento(base_dir, nombre_archivo = archivo)
+})
+
+
+lista_ids <- lapply(lista_datos, function(df) {
+  df$Cod_Titulacion
+})
+
+ids_comunes <- Reduce(intersect, lista_ids)
+
+datos_consolidados_rendimiento <- bind_rows(lista_datos) %>%
+  filter(Cod_Titulacion %in% ids_comunes)
+```
+
+# Procesado de abandono_rendimiento
+
+```{r}
+datos_consolidados_mixto <- leer_excel_mixto(base_dir, "abandono_rendimiento_2019_2020.xlsx")
+```
+
+# Procesado completo de todos los datos
+
+```{r}
+# Creamo mapa de centros para rellenar el Cod_Centro en los históricos (rendimiento y abandono)
+mapa_centros <- datos_consolidados_mixto %>%
+  select(Cod_Titulacion, Cod_Centro) %>%
+  distinct()
+
+# Renombrar columnas para que coincidan
+rendimiento_prep <- datos_consolidados_rendimiento %>%
+  rename(Matriculados_Rendimiento = Alumnos_Matriculados)
+
+abandono_prep <- datos_consolidados_abandono %>%
+  rename(Matriculados_Abandono = Alumnos_Matriculados)
+
+# Unimos rendimiento con abandono
+historico_unido <- full_join(
+  rendimiento_prep, 
+  abandono_prep, 
+  by = c("Cod_Titulacion", "Titulacion", "Año")
+)
+
+# Añadimos la columna codigo de centro
+historico_completo <- historico_unido %>%
+  left_join(mapa_centros, by = "Cod_Titulacion")
+
+# Unimos el histórico completo con el dataset mixto (que ya tiene todo junto)
+datos_brutos <- bind_rows(historico_completo, datos_consolidados_mixto)
+
+
+# Calculamos cuántos años distintos hay en total en todo nuestro estudio
+total_anyos <- n_distinct(datos_brutos$Año)
+
+# Aplicamos el filtro estricto
+datos_finales <- datos_brutos %>%
+  # Primero, eliminamos las filas puntuales que no tengan rendimiento o abandono
+  drop_na(Tasa_Rendimiento, Tasa_Abandono) %>%
+  # Agrupamos por titulación
+  group_by(Cod_Titulacion) %>%
+  # Solo conservamos los grupos (titulaciones) que tengan tantas filas como el total de años
+  filter(n() == total_anyos) %>%
+  ungroup() %>%
+  # Ordenamos columnas y filas
+  select(Cod_Centro, Cod_Titulacion, Titulacion, Año, 
+         Tasa_Rendimiento, Alumnos_Egresados, Matriculados_Rendimiento,
+         Tasa_Abandono, Alumnos_Abandonan, Matriculados_Abandono) %>%
+  arrange(Cod_Titulacion, Año)
+```
+```{r}
+datos_finales
+```
+
+
+```{r}
+write_csv(datos_finales, "dataset_abandono_rendimiento_estricto.csv")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
