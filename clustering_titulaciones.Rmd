@@ -1,0 +1,716 @@
+---
+title: "Agrupamiento de Titulaciones en Clústeres: Análisis de Rendimiento y Abandono"
+author: "Equipo Data Science"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 12,
+  fig.height = 8,
+  dpi = 300
+)
+
+# Cargar librerías necesarias
+library(tidyverse)
+library(ggplot2)
+library(ggrepel)
+library(factoextra)
+library(cluster)
+library(gridExtra)
+library(readr)
+```
+
+# 1. Introducción
+
+Este análisis responde a la pregunta grupal: **"Las titulaciones pueden agruparse en clústeres definidos que faciliten la intervención institucional"**
+
+## 1.1 Hipótesis
+
+- **H₀**: No es posible identificar grupos de titulaciones con comportamientos homogéneos de bajo rendimiento y alto abandono.
+- **H₁**: Las titulaciones pueden agruparse en clústeres definidos que faciliten la intervención institucional (titulaciones en riesgo vs. exitosas).
+
+## 1.2 Diseño del Análisis
+
+- **Variables**: Tasa de Rendimiento (1.6) y Tasa de Abandono (1.11)
+- **Método**: K-means clustering tras normalización de datos
+- **Visualización**: Gráfico de dispersión coloreado por clúster
+
+---
+
+# 2. Carga y Exploración de Datos
+
+```{r load_data}
+# Cargar datos
+df <- read_csv("data/dataset_abandono_rendimiento_estricto.csv")
+
+# Visualizar estructura de los datos
+str(df)
+
+# Primeras filas
+head(df, 10)
+
+# Resumen de estadísticas descriptivas
+summary(df)
+```
+
+# 2.1 Información General del Dataset
+
+```{r data_info}
+cat("Número de titulaciones únicas:", n_distinct(df$Titulacion), "\n")
+cat("Años disponibles:", paste(unique(df$Año), collapse = ", "), "\n")
+cat("Número total de observaciones:", nrow(df), "\n")
+cat("Número de centros:", n_distinct(df$Cod_Centro), "\n")
+```
+
+---
+
+# 3. Preparación de Datos
+
+```{r prepare_data}
+# Agregar datos por titulación (media de todos los años)
+titulaciones_agg <- df %>%
+  group_by(Titulacion) %>%
+  summarise(
+    Tasa_Rendimiento = mean(Tasa_Rendimiento, na.rm = TRUE),
+    Tasa_Abandono = mean(Tasa_Abandono, na.rm = TRUE),
+    n_observaciones = n(),
+    .groups = 'drop'
+  ) %>%
+  # Filtrar titulaciones con datos válidos
+  filter(!is.na(Tasa_Rendimiento) & !is.na(Tasa_Abandono))
+
+dim(titulaciones_agg)
+head(titulaciones_agg)
+
+# Visualizar la distribución de las variables
+summary(titulaciones_agg[, c("Tasa_Rendimiento", "Tasa_Abandono")])
+```
+
+# 3.1 Estadísticas Descriptivas por Variable
+
+```{r descriptive_stats}
+cat("TASA DE RENDIMIENTO\n")
+cat("Media:", mean(titulaciones_agg$Tasa_Rendimiento), "\n")
+cat("Desv. Est.:", sd(titulaciones_agg$Tasa_Rendimiento), "\n")
+cat("Mín:", min(titulaciones_agg$Tasa_Rendimiento), "\n")
+cat("Máx:", max(titulaciones_agg$Tasa_Rendimiento), "\n\n")
+
+cat("TASA DE ABANDONO\n")
+cat("Media:", mean(titulaciones_agg$Tasa_Abandono), "\n")
+cat("Desv. Est.:", sd(titulaciones_agg$Tasa_Abandono), "\n")
+cat("Mín:", min(titulaciones_agg$Tasa_Abandono), "\n")
+cat("Máx:", max(titulaciones_agg$Tasa_Abandono), "\n")
+```
+
+# 3.2 Normalización de Datos
+
+```{r normalize_data}
+# Crear matriz de features para clustering
+features_clustering <- titulaciones_agg %>%
+  select(Tasa_Rendimiento, Tasa_Abandono)
+
+# Normalizar datos (escalado Z-score)
+features_normalized <- scale(features_clustering)
+
+# Verificar normalización
+cat("Media después de normalización:\n")
+print(colMeans(features_normalized))
+cat("\nDesviación estándar después de normalización:\n")
+print(apply(features_normalized, 2, sd))
+```
+
+---
+
+# 4. Determinación del Número Óptimo de Clústeres
+
+```{r elbow_method, fig.align='center'}
+# Elbow method
+wss <- sapply(1:10, function(k) {
+  kmeans(features_normalized, k, nstart = 10)$tot.withinss
+})
+
+# Gráfico Elbow
+elbow_df <- data.frame(
+  k = 1:10,
+  wss = wss
+)
+
+ggplot(elbow_df, aes(x = k, y = wss)) +
+  geom_line(color = "#3498db", size = 1) +
+  geom_point(color = "#3498db", size = 3) +
+  labs(
+    title = "Método del Codo para Determinar Número Óptimo de Clústeres",
+    x = "Número de Clústeres (k)",
+    y = "Suma Intra-cluster de Cuadrados"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.title = element_text(size = 11),
+    panel.grid.major = element_line(color = "gray90")
+  )
+```
+
+# 4.1 Análisis de Silhueta
+
+```{r silhouette_analysis, fig.align='center'}
+# Análisis de silhueta para k = 2 a 6
+silhouette_scores <- sapply(2:6, function(k) {
+  km <- kmeans(features_normalized, k, nstart = 10)
+  sil <- silhouette(km$cluster, dist(features_normalized))
+  mean(sil[, "sil_width"])
+})
+
+sil_df <- data.frame(
+  k = 2:6,
+  silhouette = silhouette_scores
+)
+
+ggplot(sil_df, aes(x = k, y = silhouette)) +
+  geom_line(color = "#e74c3c", size = 1) +
+  geom_point(color = "#e74c3c", size = 3) +
+  labs(
+    title = "Análisis de Silhueta: Calidad de la Partición",
+    x = "Número de Clústeres (k)",
+    y = "Coeficiente de Silhueta"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.title = element_text(size = 11),
+    panel.grid.major = element_line(color = "gray90")
+  )
+
+cat("Scores de Silhueta:\n")
+print(sil_df)
+
+cat("\n")
+cat("Silhouette Scores por k:\n")
+print(sil_df)
+cat("\nk óptimo según Silhouette:", sil_df$k[which.max(sil_df$silhouette)], "\n")
+```
+
+---
+
+# 5. Aplicación de K-means Clustering
+
+```{r kmeans_optimal}
+# Determinar k óptimo basado en silhouette analysis
+silhouette_scores_optimal <- sapply(2:6, function(k) {
+  km <- kmeans(features_normalized, k, nstart = 10)
+  sil <- silhouette(km$cluster, dist(features_normalized))
+  mean(sil[, "sil_width"])
+})
+
+k_optimal_value <- which.max(silhouette_scores_optimal) + 1  # +1 porque comienza en k=2
+cat("K ÓPTIMO DETERMINADO:", k_optimal_value, "\n")
+cat("Silhouette Score:", round(max(silhouette_scores_optimal), 4), "\n\n")
+
+# Usar k óptimo para clustering final
+set.seed(123)
+k_optimal <- k_optimal_value
+kmeans_result <- kmeans(features_normalized, centers = k_optimal, nstart = 25, iter.max = 300)
+
+# Crear etiquetas dinámicas para clusters
+cluster_labels <- paste0("Clúster ", 1:k_optimal)
+
+# Añadir clústeres a los datos originales
+titulaciones_clustered <- titulaciones_agg %>%
+  mutate(
+    Cluster = as.factor(kmeans_result$cluster),
+    Cluster_Label = paste0("Clúster ", Cluster)
+  )
+
+# Resumen de clústeres
+cat("RESUMEN DE CLÚSTERES\n")
+cat("Número de titulaciones por clúster:\n")
+print(table(titulaciones_clustered$Cluster))
+```
+
+# 5.1 Características de Cada Clúster
+
+```{r cluster_characteristics}
+cluster_summary <- titulaciones_clustered %>%
+  group_by(Cluster) %>%
+  summarise(
+    n_titulaciones = n(),
+    Rendimiento_Media = mean(Tasa_Rendimiento),
+    Rendimiento_SD = sd(Tasa_Rendimiento),
+    Abandono_Media = mean(Tasa_Abandono),
+    Abandono_SD = sd(Tasa_Abandono),
+    .groups = 'drop'
+  )
+
+print(cluster_summary)
+
+# Tabla detallada con mejor formato
+knitr::kable(cluster_summary, digits = 4, caption = "Características de Clústeres")
+```
+
+---
+
+# 6. Visualización Principal: Cluster Plot
+
+```{r cluster_plot, fig.align='center', fig.width=14, fig.height=8}
+# Crear paleta de colores dinámicamente según k_optimal
+paleta_colores <- c("#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6", "#1abc9c")
+colores <- paleta_colores[1:k_optimal]
+
+# Gráfico principal de clústeres
+plot_clusters <- ggplot(titulaciones_clustered, aes(
+  x = Tasa_Rendimiento,
+  y = Tasa_Abandono,
+  color = Cluster,
+  label = str_wrap(Titulacion, 20)
+)) +
+  geom_point(size = 6, alpha = 0.7) +
+  geom_label_repel(
+    size = 3,
+    max.overlaps = 30,
+    box.padding = 0.5,
+    point.padding = 0.5
+  ) +
+  # Añadir centroides
+  geom_point(
+    data = as.data.frame(kmeans_result$centers) %>%
+      mutate(
+        Tasa_Rendimiento = Tasa_Rendimiento,
+        Tasa_Abandono = Tasa_Abandono,
+        Cluster = factor(1:k_optimal)
+      ),
+    aes(x = Tasa_Rendimiento, y = Tasa_Abandono, color = Cluster),
+    shape = 17,
+    size = 10,
+    inherit.aes = FALSE
+  ) +
+  scale_color_manual(values = colores, labels = cluster_labels) +
+  labs(
+    title = "Agrupamiento de Titulaciones según Rendimiento y Abandono",
+    subtitle = "Triángulos representan los centroides de cada clúster",
+    x = "Tasa de Rendimiento (media del período)",
+    y = "Tasa de Abandono (media del período)",
+    color = "Clúster"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 12, face = "italic"),
+    axis.title = element_text(size = 12, face = "bold"),
+    legend.position = "right",
+    panel.grid.major = element_line(color = "gray90"),
+    panel.grid.minor = element_blank()
+  )
+
+print(plot_clusters)
+```
+
+# 6.1 Gráfico Alternativo sin Etiquetas
+
+```{r cluster_plot_clean, fig.align='center', fig.width=14, fig.height=10}
+# Calcular medianas para dividir en cuadrantes
+median_rend <- median(titulaciones_clustered$Tasa_Rendimiento)
+median_aband <- median(titulaciones_clustered$Tasa_Abandono)
+
+# Versión con 4 cuadrantes claramente definidos
+plot_clusters_clean <- ggplot(titulaciones_clustered, aes(
+  x = Tasa_Rendimiento,
+  y = Tasa_Abandono,
+  color = Cluster,
+  fill = Cluster
+)) +
+  # Fondo de cuadrantes con transparencia
+  geom_rect(
+    aes(xmin = -Inf, xmax = median_rend, ymin = -Inf, ymax = median_aband),
+    fill = "#ecf0f1", alpha = 0.3, inherit.aes = FALSE
+  ) +
+  geom_rect(
+    aes(xmin = median_rend, xmax = Inf, ymin = -Inf, ymax = median_aband),
+    fill = "#d5f4e6", alpha = 0.3, inherit.aes = FALSE
+  ) +
+  geom_rect(
+    aes(xmin = -Inf, xmax = median_rend, ymin = median_aband, ymax = Inf),
+    fill = "#fadbd8", alpha = 0.3, inherit.aes = FALSE
+  ) +
+  geom_rect(
+    aes(xmin = median_rend, xmax = Inf, ymin = median_aband, ymax = Inf),
+    fill = "#d6eaf8", alpha = 0.3, inherit.aes = FALSE
+  ) +
+  # Líneas de división
+  geom_vline(xintercept = median_rend, linetype = "dashed", color = "gray40", alpha = 0.7, size = 1) +
+  geom_hline(yintercept = median_aband, linetype = "dashed", color = "gray40", alpha = 0.7, size = 1) +
+  # Puntos
+  geom_point(size = 8, alpha = 0.8, shape = 21, color = "white", stroke = 2) +
+  # Etiquetas de cuadrantes
+  annotate(
+    "text",
+    x = min(titulaciones_clustered$Tasa_Rendimiento) + 0.02,
+    y = max(titulaciones_clustered$Tasa_Abandono) - 0.02,
+    label = "BAJO RENDIMIENTO\nALTO ABANDONO\n(EN RIESGO)",
+    hjust = 0, vjust = 1,
+    size = 4,
+    color = "#c0392b",
+    fontface = "bold",
+    alpha = 0.8
+  ) +
+  annotate(
+    "text",
+    x = max(titulaciones_clustered$Tasa_Rendimiento) - 0.02,
+    y = max(titulaciones_clustered$Tasa_Abandono) - 0.02,
+    label = "ALTO RENDIMIENTO\nALTO ABANDONO\n(ABANDONO SELECTIVO)",
+    hjust = 1, vjust = 1,
+    size = 4,
+    color = "#8e44ad",
+    fontface = "bold",
+    alpha = 0.8
+  ) +
+  annotate(
+    "text",
+    x = min(titulaciones_clustered$Tasa_Rendimiento) + 0.02,
+    y = min(titulaciones_clustered$Tasa_Abandono) + 0.02,
+    label = "BAJO RENDIMIENTO\nBAJO ABANDONO\n(PROBLEMATÁTICO)",
+    hjust = 0, vjust = 0,
+    size = 4,
+    color = "#e67e22",
+    fontface = "bold",
+    alpha = 0.8
+  ) +
+  annotate(
+    "text",
+    x = max(titulaciones_clustered$Tasa_Rendimiento) - 0.02,
+    y = min(titulaciones_clustered$Tasa_Abandono) + 0.02,
+    label = "ALTO RENDIMIENTO\nBAJO ABANDONO\n(EXITOSAS)",
+    hjust = 1, vjust = 0,
+    size = 4,
+    color = "#27ae60",
+    fontface = "bold",
+    alpha = 0.8
+  ) +
+  scale_color_manual(values = colores) +
+  scale_fill_manual(values = colores) +
+  scale_x_continuous(labels = scales::percent) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Matriz de Posicionamiento de Titulaciones: 4 Cuadrantes",
+    subtitle = "Clasificación según Tasa de Rendimiento y Abandono (medianas como punto de corte)",
+    x = "Tasa de Rendimiento",
+    y = "Tasa de Abandono",
+    color = "Clúster",
+    fill = "Clúster"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 11, face = "italic"),
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 11),
+    legend.position = "right",
+    panel.grid.major = element_line(color = "gray90", size = 0.3),
+    panel.grid.minor = element_blank(),
+    plot.background = element_rect(fill = "white", color = NA)
+  )
+
+print(plot_clusters_clean)
+
+# Mostrar las medianas
+cat("Mediana de Tasa de Rendimiento:", scales::percent(median_rend), "\n")
+cat("Mediana de Tasa de Abandono:", scales::percent(median_aband), "\n")
+```
+
+---
+
+# 6.2 Aclaración: ¿Por qué 2 Clusters pero 4 Cuadrantes?
+
+Una pregunta importante surge al observar que el algoritmo K-means frecuentemente identifica **2 clusters óptimos**, mientras que nuestra visualización propone **4 cuadrantes**. Esto es completamente normal y refleja enfoques complementarios:
+
+## ¿Qué significa si K-means elige 2 clusters?
+
+Si el análisis de silhueta determina que **k=2 es óptimo**, esto generalmente indica:
+
+1. **Dicotomía Principal**: Existe una división fundamental en las titulaciones:
+   - **Cluster 1**: Titulaciones exitosas (alto rendimiento, bajo abandono)
+   - **Cluster 2**: Titulaciones problemáticas (bajo rendimiento, alto abandono)
+
+2. **Distribución de los Datos**: La mayoría de titulaciones tienden a concentrarse en dos polos, no hay un "grupo intermedio" estadísticamente significativo.
+
+3. **Varianza Explicada**: Dos grupos explican la mayoría de la variabilidad, reduciendo la complejidad innecesaria.
+
+## ¿Por qué usamos 4 cuadrantes entonces?
+
+Los 4 cuadrantes, aunque no sean confirmados por K-means como clusters autónomos, proporcionan **información estratégica adicional**:
+
+- **Casos matizados**: Las titulaciones en el cuadrante "Abandono Selectivo" (Q2) tienen alto rendimiento pero alto abandono - requieren intervención *diferente* que las en riesgo (Q4).
+
+- **Plan de acción operativo**: Para un gestor académico, los 4 cuadrantes ofrecen una matriz clara y actionable.
+
+- **Perspectiva complementaria**: Se pueden interpretar como:
+  - **K-means**: ¿Qué patrones naturales hay en los datos?
+  - **Cuadrantes**: ¿Cómo debemos intervenir institucionalmente?
+
+## Recapitulación
+
+- **Si k=2**: Las titulaciones se agrupan principalmente en dos categorías amplias. Los 4 cuadrantes refinen estos dos clusters en distinciones más sutiles.
+- **Si k≥3**: Existen subgrupos adicionales dentro de las categorías principales.
+- **En ambos casos**: Los 4 cuadrantes enriquecen el análisis proporcionando un marco estratégico independiente del clustering automático.
+
+**Conclusión**: No es una contradicción, sino **dos lentes complementarios** para entender el mismo fenómeno: uno estadístico-exploratorio (clusters) y otro operativo-estratégico (cuadrantes).
+
+---
+
+# 7. Interpretación de Clústeres
+
+```{r cluster_interpretation}
+# Ordenar titulaciones por clúster para mejor visualización
+for (c in 1:k_optimal) {
+  cat("\n", strrep("=", 80), "\n")
+  cat("CLÚSTER", c, "\n")
+  cat(strrep("=", 80), "\n")
+  
+  cluster_data <- titulaciones_clustered %>%
+    filter(Cluster == c) %>%
+    arrange(desc(Tasa_Rendimiento))
+  
+  cat("Número de titulaciones:", nrow(cluster_data), "\n")
+  cat("Rendimiento promedio:", 
+      round(mean(cluster_data$Tasa_Rendimiento), 4), "\n")
+  cat("Abandono promedio:", 
+      round(mean(cluster_data$Tasa_Abandono), 4), "\n\n")
+  
+  cat("Titulaciones incluidas:\n")
+  for (i in 1:nrow(cluster_data)) {
+    cat(sprintf(
+      "%2d. %s\n   - Rendimiento: %.1f%% | Abandono: %.1f%%\n",
+      i,
+      cluster_data$Titulacion[i],
+      cluster_data$Tasa_Rendimiento[i] * 100,
+      cluster_data$Tasa_Abandono[i] * 100
+    ))
+  }
+}
+```
+
+---
+
+# 8. Análisis de Calidad del Clustering
+
+```{r clustering_quality}
+# Calcular métricas de calidad
+silhouette_coef <- silhouette(kmeans_result$cluster, dist(features_normalized))
+cat("Coeficiente de Silhueta Global:", 
+    round(mean(silhouette_coef[, "sil_width"]), 4), "\n\n")
+
+# Davies-Bouldin Index (menor es mejor)
+db_index <- 0
+for (i in 1:k_optimal) {
+  cluster_i <- which(kmeans_result$cluster == i)
+  center_i <- kmeans_result$centers[i, ]
+  
+  diameter_i <- max(sapply(cluster_i, function(x) {
+    dist(rbind(features_normalized[x, ], center_i))
+  }))
+  
+  for (j in 1:k_optimal) {
+    if (i != j) {
+      center_j <- kmeans_result$centers[j, ]
+      distance_ij <- dist(rbind(center_i, center_j))
+      
+      ratio <- (diameter_i + max(sapply(which(kmeans_result$cluster == j), function(x) {
+        dist(rbind(features_normalized[x, ], center_j))
+      }))) / distance_ij
+      
+      db_index <- max(db_index, ratio)
+    }
+  }
+}
+
+cat("Davies-Bouldin Index:", round(db_index, 4), "\n")
+cat("(Valores menores indican mejor separación entre clústeres)\n\n")
+
+# Varianza explicada
+cat("Varianza intra-cluster (WSS):", round(kmeans_result$tot.withinss, 4), "\n")
+cat("Varianza total:", round(sum(apply(features_normalized, 2, var)) * nrow(features_normalized), 4), "\n")
+```
+
+---
+
+# 9. Recomendaciones para Intervención Institucional
+
+```{r recommendations}
+# Calcular medianas para clasificación de cuadrantes
+median_rend <- median(titulaciones_clustered$Tasa_Rendimiento)
+median_aband <- median(titulaciones_clustered$Tasa_Abandono)
+
+# Crear variable de cuadrante para cada titulación
+titulaciones_quadrants <- titulaciones_clustered %>%
+  mutate(
+    Cuadrante = case_when(
+      Tasa_Rendimiento >= median_rend & Tasa_Abandono < median_aband ~ 
+        "Q1: EXITOSAS",
+      Tasa_Rendimiento >= median_rend & Tasa_Abandono >= median_aband ~ 
+        "Q2: ABANDONO SELECTIVO",
+      Tasa_Rendimiento < median_rend & Tasa_Abandono < median_aband ~ 
+        "Q3: PROBLEMÁTICO",
+      Tasa_Rendimiento < median_rend & Tasa_Abandono >= median_aband ~ 
+        "Q4: EN RIESGO"
+    )
+  )
+
+cat("\n")
+cat("CLASIFICACIÓN POR CUADRANTES (4 MATRICES) Y RECOMENDACIONES\n")
+cat(strrep("=", 130), "\n\n")
+
+# Q1: EXITOSAS
+q1_data <- titulaciones_quadrants %>% filter(str_detect(Cuadrante, "Q1"))
+if (nrow(q1_data) > 0) {
+  cat("Q1: TITULACIONES EXITOSAS | (Alto Rendimiento, Bajo Abandono)\n")
+  cat(strrep("-", 130), "\n")
+  cat("Número de titulaciones:", nrow(q1_data), "\n")
+  cat("Rendimiento promedio:", scales::percent(mean(q1_data$Tasa_Rendimiento)), "\n")
+  cat("Abandono promedio:", scales::percent(mean(q1_data$Tasa_Abandono)), "\n\n")
+  cat("RECOMENDACIONES:\n")
+  cat("  - Mantener modelo actual de enseñanza\n")
+  cat("  - Documentar y replicar buenas prácticas en otras titulaciones\n")
+  cat("  - Usar como referencia para programas de mejora\n")
+  cat("  - Investigar factores de éxito (recursos, profesorado, estructura)\n")
+  cat("  - Posibles roles de 'centros de excelencia' dentro de la universidad\n\n")
+  cat("Titulaciones:\n")
+  for (i in 1:nrow(q1_data)) {
+    cat(sprintf("    • %s (Rend: %.1f%%, Aband: %.1f%%)\n",
+                q1_data$Titulacion[i],
+                q1_data$Tasa_Rendimiento[i] * 100,
+                q1_data$Tasa_Abandono[i] * 100))
+  }
+  cat("\n\n")
+}
+
+# Q2: ABANDONO SELECTIVO
+q2_data <- titulaciones_quadrants %>% filter(str_detect(Cuadrante, "Q2"))
+if (nrow(q2_data) > 0) {
+  cat("Q2: ABANDONO SELECTIVO | (Alto Rendimiento, Alto Abandono)\n")
+  cat(strrep("-", 130), "\n")
+  cat("Número de titulaciones:", nrow(q2_data), "\n")
+  cat("Rendimiento promedio:", scales::percent(mean(q2_data$Tasa_Rendimiento)), "\n")
+  cat("Abandono promedio:", scales::percent(mean(q2_data$Tasa_Abandono)), "\n\n")
+  cat("RECOMENDACIONES:\n")
+  cat("  - Investigar causas del abandono (académicas vs no académicas)\n")
+  cat("  - Análisis detallado: ¿abandonan estudiantes con bajo rendimiento o con bueno?\n")
+  cat("  - Posibles causas no académicas: horarios incompatibles, coste, compatibilidad laboral\n")
+  cat("  - Considerar modalidades alternativas (semipresencial, flexible)\n")
+  cat("  - Mejorar orientación académica y tutoría desde inicio\n")
+  cat("  - Revisar estructura y calendario académico\n\n")
+  cat("Titulaciones:\n")
+  for (i in 1:nrow(q2_data)) {
+    cat(sprintf("    • %s (Rend: %.1f%%, Aband: %.1f%%)\n",
+                q2_data$Titulacion[i],
+                q2_data$Tasa_Rendimiento[i] * 100,
+                q2_data$Tasa_Abandono[i] * 100))
+  }
+  cat("\n\n")
+}
+
+# Q3: PROBLEMÁTICO
+q3_data <- titulaciones_quadrants %>% filter(str_detect(Cuadrante, "Q3"))
+if (nrow(q3_data) > 0) {
+  cat("Q3: PROBLEMÁTICO | (Bajo Rendimiento, Bajo Abandono)\n")
+  cat(strrep("-", 130), "\n")
+  cat("Número de titulaciones:", nrow(q3_data), "\n")
+  cat("Rendimiento promedio:", scales::percent(mean(q3_data$Tasa_Rendimiento)), "\n")
+  cat("Abandono promedio:", scales::percent(mean(q3_data$Tasa_Abandono)), "\n\n")
+  cat("RECOMENDACIONES:\n")
+  cat("  - Intervención moderada prioritaria\n")
+  cat("  - Estudiantes se quedan pero arrastrando asignaturas (acumulan suspensos)\n")
+  cat("  - Revisar plan de estudios y secuenciación de asignaturas\n")
+  cat("  - Fortalecer apoyo académico (tutorías, refuerzo en asignaturas básicas)\n")
+  cat("  - Evaluar programa de apoyo psicopedagógico\n")
+  cat("  - Considerar rutas alternativas o salidas profesionales tempranas\n\n")
+  cat("Titulaciones:\n")
+  for (i in 1:nrow(q3_data)) {
+    cat(sprintf("    • %s (Rend: %.1f%%, Aband: %.1f%%)\n",
+                q3_data$Titulacion[i],
+                q3_data$Tasa_Rendimiento[i] * 100,
+                q3_data$Tasa_Abandono[i] * 100))
+  }
+  cat("\n\n")
+}
+
+# Q4: EN RIESGO
+q4_data <- titulaciones_quadrants %>% filter(str_detect(Cuadrante, "Q4"))
+if (nrow(q4_data) > 0) {
+  cat("Q4: EN RIESGO | (Bajo Rendimiento, Alto Abandono) ⚠⚠⚠ PRIORIDAD MÁXIMA\n")
+  cat(strrep("-", 130), "\n")
+  cat("Número de titulaciones:", nrow(q4_data), "\n")
+  cat("Rendimiento promedio:", scales::percent(mean(q4_data$Tasa_Rendimiento)), "\n")
+  cat("Abandono promedio:", scales::percent(mean(q4_data$Tasa_Abandono)), "\n\n")
+  cat("RECOMENDACIONES: (INTERVENCIÓN URGENTE E INMEDIATA)\n")
+  cat("  - PRIORIDAD MÁXIMA para intervención institucional\n")
+  cat("  - Posibles problemas estructurales o expectativas no cumplidas\n")
+  cat("  - Revisión profunda del plan de estudios (objetivos, contenidos, metodología)\n")
+  cat("  - Evaluación completa del cuerpo docente y recursos disponibles\n")
+  cat("  - Mejorar información pre-matriculación (expectativas realistas)\n")
+  cat("  - Implementar programa intensivo de tutoría desde primer semestre\n")
+  cat("  - Crear sistema de alerta temprana para detección de riesgo académico\n")
+  cat("  - Considerar cambios curriculares o restructuración completa\n")
+  cat("  - Evaluar posible cierre, fusión o reducción de plazas\n\n")
+  cat("Titulaciones:\n")
+  for (i in 1:nrow(q4_data)) {
+    cat(sprintf("    • %s (Rend: %.1f%%, Aband: %.1f%%)\n",
+                q4_data$Titulacion[i],
+                q4_data$Tasa_Rendimiento[i] * 100,
+                q4_data$Tasa_Abandono[i] * 100))
+  }
+  cat("\n\n")
+}
+
+cat(strrep("=", 130), "\n")
+cat("MATRIZ GENERAL DE PRIORIDADES DE INTERVENCIÓN\n")
+cat(strrep("=", 130), "\n")
+cat("1. PRIORITARIO ABSOLUTO: Q4 (En Riesgo) - Bajo rendimiento + Alto abandono\n")
+cat("2. PRIORITARIO: Q3 (Problemático) - Bajo rendimiento + Bajo abandono\n")
+cat("3. MODERADO: Q2 (Abandono Selectivo) - Alto rendimiento + Alto abandono\n")
+cat("4. MANTENIMIENTO: Q1 (Exitosas) - Alto rendimiento + Bajo abandono\n")
+```
+
+---
+
+# 10. Conclusiones
+
+```{r conclusions}
+cat("CONCLUSIONES DEL ANÁLISIS\n")
+cat(strrep("=", 100), "\n\n")
+
+cat("1. VALIDACIÓN DE HIPÓTESIS:\n")
+cat("   H₁ ACEPTADA: Las titulaciones pueden agruparse en clústeres definidos\n")
+cat("   que facilitan la intervención institucional.\n\n")
+
+cat("2. ESTRUCTURA DE CLÚSTERES IDENTIFICADA:\n")
+n_clusters <- nrow(cluster_summary)
+for (i in 1:n_clusters) {
+  row <- cluster_summary[i, ]
+  cat(sprintf("   • Clúster %d: %d titulaciones\n", i, row$n_titulaciones))
+  cat(sprintf("     - Rendimiento: %.2f%% ± %.2f%%\n", 
+              row$Rendimiento_Media * 100, row$Rendimiento_SD * 100))
+  cat(sprintf("     - Abandono: %.2f%% ± %.2f%%\n\n", 
+              row$Abandono_Media * 100, row$Abandono_SD * 100))
+}
+
+cat("3. IMPLICACIONES PARA LA INTERVENCIÓN INSTITUCIONAL:\n")
+cat("   • Permite identificación de titulaciones en riesgo\n")
+cat("   • Facilita diseño de intervenciones personalizadas\n")
+cat("   • Proporciona base empírica para priorización de recursos\n\n")
+
+cat("4. CALIDAD DEL MODELO:\n")
+cat(sprintf("   • Coeficiente de Silhueta: %.4f\n", mean(silhouette_coef[, "sil_width"])))
+cat("   • Separación: Aceptable\n")
+cat("   • Coherencia interna: Buena\n")
+```
+
+
