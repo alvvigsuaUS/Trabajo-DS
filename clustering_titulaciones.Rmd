@@ -36,16 +36,16 @@ Este análisis responde a la pregunta grupal: **"Las titulaciones pueden agrupar
 
 ## 1.1 Hipótesis
 
-- **H₀**: No es posible identificar grupos de titulaciones con comportamientos homogéneos de bajo rendimiento y alto abandono.
-- **H₁**: Las titulaciones pueden agruparse en clústeres definidos que faciliten la intervención institucional (titulaciones en riesgo vs. exitosas).
+-   **H₀**: No es posible identificar grupos de titulaciones con comportamientos homogéneos de bajo rendimiento y alto abandono.
+-   **H₁**: Las titulaciones pueden agruparse en clústeres definidos que faciliten la intervención institucional (titulaciones en riesgo vs. exitosas).
 
 ## 1.2 Diseño del Análisis
 
-- **Variables**: Tasa de Rendimiento (1.6) y Tasa de Abandono (1.11)
-- **Método**: K-means clustering tras normalización de datos
-- **Visualización**: Gráfico de dispersión coloreado por clúster
+-   **Variables**: Tasa de Rendimiento (1.6) y Tasa de Abandono (1.11)
+-   **Método**: K-means clustering tras normalización de datos
+-   **Visualización**: Gráfico de dispersión coloreado por clúster
 
----
+------------------------------------------------------------------------
 
 # 2. Carga y Exploración de Datos
 
@@ -72,7 +72,7 @@ cat("Número total de observaciones:", nrow(df), "\n")
 cat("Número de centros:", n_distinct(df$Cod_Centro), "\n")
 ```
 
----
+------------------------------------------------------------------------
 
 # 3. Preparación de Datos
 
@@ -129,7 +129,7 @@ cat("\nDesviación estándar después de normalización:\n")
 print(apply(features_normalized, 2, sd))
 ```
 
----
+------------------------------------------------------------------------
 
 # 4. Determinación del Número Óptimo de Clústeres
 
@@ -200,7 +200,7 @@ print(sil_df)
 cat("\nk óptimo según Silhouette:", sil_df$k[which.max(sil_df$silhouette)], "\n")
 ```
 
----
+------------------------------------------------------------------------
 
 # 5. Aplicación de K-means Clustering
 
@@ -257,7 +257,7 @@ print(cluster_summary)
 knitr::kable(cluster_summary, digits = 4, caption = "Características de Clústeres")
 ```
 
----
+------------------------------------------------------------------------
 
 # 6. Visualización Principal: Cluster Plot
 
@@ -377,7 +377,7 @@ plot_clusters_clean <- ggplot(titulaciones_clustered, aes(
     "text",
     x = min(titulaciones_clustered$Tasa_Rendimiento) + 0.02,
     y = min(titulaciones_clustered$Tasa_Abandono) + 0.02,
-    label = "BAJO RENDIMIENTO\nBAJO ABANDONO\n(PROBLEMATÁTICO)",
+    label = "BAJO RENDIMIENTO\nBAJO ABANDONO\n(PROBLEMÁTICO)",
     hjust = 0, vjust = 0,
     size = 4,
     color = "#e67e22",
@@ -426,7 +426,7 @@ cat("Mediana de Tasa de Rendimiento:", scales::percent(median_rend), "\n")
 cat("Mediana de Tasa de Abandono:", scales::percent(median_aband), "\n")
 ```
 
----
+------------------------------------------------------------------------
 
 # 6.2 Aclaración: ¿Por qué 2 Clusters pero 4 Cuadrantes?
 
@@ -436,35 +436,37 @@ Una pregunta importante surge al observar que el algoritmo K-means frecuentement
 
 Si el análisis de silhueta determina que **k=2 es óptimo**, esto generalmente indica:
 
-1. **Dicotomía Principal**: Existe una división fundamental en las titulaciones:
-   - **Cluster 1**: Titulaciones exitosas (alto rendimiento, bajo abandono)
-   - **Cluster 2**: Titulaciones problemáticas (bajo rendimiento, alto abandono)
+1.  **Dicotomía Principal**: Existe una división fundamental en las titulaciones:
 
-2. **Distribución de los Datos**: La mayoría de titulaciones tienden a concentrarse en dos polos, no hay un "grupo intermedio" estadísticamente significativo.
+    -   **Cluster 1**: Titulaciones exitosas (alto rendimiento, bajo abandono)
+    -   **Cluster 2**: Titulaciones problemáticas (bajo rendimiento, alto abandono)
 
-3. **Varianza Explicada**: Dos grupos explican la mayoría de la variabilidad, reduciendo la complejidad innecesaria.
+2.  **Distribución de los Datos**: La mayoría de titulaciones tienden a concentrarse en dos polos, no hay un "grupo intermedio" estadísticamente significativo.
+
+3.  **Varianza Explicada**: Dos grupos explican la mayoría de la variabilidad, reduciendo la complejidad innecesaria.
 
 ## ¿Por qué usamos 4 cuadrantes entonces?
 
 Los 4 cuadrantes, aunque no sean confirmados por K-means como clusters autónomos, proporcionan **información estratégica adicional**:
 
-- **Casos matizados**: Las titulaciones en el cuadrante "Abandono Selectivo" (Q2) tienen alto rendimiento pero alto abandono - requieren intervención *diferente* que las en riesgo (Q4).
+-   **Casos matizados**: Las titulaciones en el cuadrante "Abandono Selectivo" (Q2) tienen alto rendimiento pero alto abandono - requieren intervención *diferente* que las en riesgo (Q4).
 
-- **Plan de acción operativo**: Para un gestor académico, los 4 cuadrantes ofrecen una matriz clara y actionable.
+-   **Plan de acción operativo**: Para un gestor académico, los 4 cuadrantes ofrecen una matriz clara y actionable.
 
-- **Perspectiva complementaria**: Se pueden interpretar como:
-  - **K-means**: ¿Qué patrones naturales hay en los datos?
-  - **Cuadrantes**: ¿Cómo debemos intervenir institucionalmente?
+-   **Perspectiva complementaria**: Se pueden interpretar como:
+
+    -   **K-means**: ¿Qué patrones naturales hay en los datos?
+    -   **Cuadrantes**: ¿Cómo debemos intervenir institucionalmente?
 
 ## Recapitulación
 
-- **Si k=2**: Las titulaciones se agrupan principalmente en dos categorías amplias. Los 4 cuadrantes refinen estos dos clusters en distinciones más sutiles.
-- **Si k≥3**: Existen subgrupos adicionales dentro de las categorías principales.
-- **En ambos casos**: Los 4 cuadrantes enriquecen el análisis proporcionando un marco estratégico independiente del clustering automático.
+-   **Si k=2**: Las titulaciones se agrupan principalmente en dos categorías amplias. Los 4 cuadrantes refinen estos dos clusters en distinciones más sutiles.
+-   **Si k≥3**: Existen subgrupos adicionales dentro de las categorías principales.
+-   **En ambos casos**: Los 4 cuadrantes enriquecen el análisis proporcionando un marco estratégico independiente del clustering automático.
 
 **Conclusión**: No es una contradicción, sino **dos lentes complementarios** para entender el mismo fenómeno: uno estadístico-exploratorio (clusters) y otro operativo-estratégico (cuadrantes).
 
----
+------------------------------------------------------------------------
 
 # 7. Interpretación de Clústeres
 
@@ -498,7 +500,7 @@ for (c in 1:k_optimal) {
 }
 ```
 
----
+------------------------------------------------------------------------
 
 # 8. Análisis de Calidad del Clustering
 
@@ -540,7 +542,7 @@ cat("Varianza intra-cluster (WSS):", round(kmeans_result$tot.withinss, 4), "\n")
 cat("Varianza total:", round(sum(apply(features_normalized, 2, var)) * nrow(features_normalized), 4), "\n")
 ```
 
----
+------------------------------------------------------------------------
 
 # 9. Recomendaciones para Intervención Institucional
 
@@ -679,7 +681,7 @@ cat("3. MODERADO: Q2 (Abandono Selectivo) - Alto rendimiento + Alto abandono\n")
 cat("4. MANTENIMIENTO: Q1 (Exitosas) - Alto rendimiento + Bajo abandono\n")
 ```
 
----
+------------------------------------------------------------------------
 
 # 10. Conclusiones
 
@@ -712,5 +714,3 @@ cat(sprintf("   • Coeficiente de Silhueta: %.4f\n", mean(silhouette_coef[, "si
 cat("   • Separación: Aceptable\n")
 cat("   • Coherencia interna: Buena\n")
 ```
-
-
