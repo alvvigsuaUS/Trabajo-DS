@@ -1,0 +1,384 @@
+---
+title: "Evolucion_temporal_del_rendimiento"
+output: html_document
+---
+
+# Carga de librerias necesarias
+
+```{r}
+library(tidyverse)
+```
+
+# Configuracion
+
+```{r}
+data_dir = "C:/Users/AVS/ETSII/Workspaces/DS/Trabajo DS/Data"
+dataset_abandono_rendimiento = "dataset_abandono_rendimiento_estricto.csv"
+```
+
+# Carga de datos
+
+## Cargamos dataset de abandono rendimiento
+
+```{r}
+df_abandono_rendimiento = read_csv(file.path(data_dir, dataset_abandono_rendimiento))
+```
+
+```{r}
+spec(df_abandono_rendimiento)
+```
+
+## Cargamos dataset de codigo centro
+
+```{r}
+df_codigo_centro = read_csv(file.path(data_dir, "dataset_codigo_centro.csv"))
+```
+
+```{r}
+spec(df_codigo_centro)
+```
+
+## Cargamos dataset de codigo titulaciones
+
+```{r}
+df_codigo_titulacion = read_csv(file.path(data_dir, "dataset_codigo_titulaciones.csv"))
+```
+
+```{r}
+spec(df_codigo_centro)
+```
+
+# Previsualizacion de los datos
+
+## Datos abandono rendimiento
+
+```{r}
+head(df_abandono_rendimiento)
+```
+
+## Datos codigo centro
+
+```{r}
+head(df_codigo_centro)
+```
+
+## Datos codigo titulacion
+
+```{r}
+head(df_codigo_titulacion)
+```
+
+
+# Evolucion general
+
+```{r}
+df_evolucion_abandono_rendimiento = df_abandono_rendimiento %>%
+  group_by(Año) %>%
+  summarise(Tasa_Rendimiento_Promedio = mean(Tasa_Rendimiento),
+            Tasa_Abandono_Promedio = mean(Tasa_Abandono))
+df_evolucion_abandono_rendimiento
+```
+
+```{r}
+# Calcula los rangos de cada variable
+rango_rendimiento <- range(df_evolucion_abandono_rendimiento$Tasa_Rendimiento_Promedio, na.rm = TRUE)
+rango_abandono <- range(df_evolucion_abandono_rendimiento$Tasa_Abandono_Promedio, na.rm = TRUE)
+
+# Factor de conversión de la escala derecha a la izquierda
+factor_conversion <- (rango_rendimiento[2] - rango_rendimiento[1]) / 
+                     (rango_abandono[2] - rango_abandono[1])
+
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año)) +
+  geom_line(aes(y = Tasa_Rendimiento_Promedio, color = "Rendimiento"), group = 1) +
+  geom_point(aes(y = Tasa_Rendimiento_Promedio, color = "Rendimiento"), color = "red") +
+  geom_line(aes(y = (Tasa_Abandono_Promedio - rango_abandono[1]) * factor_conversion + rango_rendimiento[1], 
+                color = "Abandono"), group = 1) +
+  geom_point(aes(y = (Tasa_Abandono_Promedio - rango_abandono[1]) * factor_conversion + rango_rendimiento[1], 
+                 color = "Abandono"), color = "blue") +
+  scale_y_continuous(
+    name = "Tasa de Rendimiento (%)",
+    limits = rango_rendimiento,
+    sec.axis = sec_axis(
+      trans = ~(. - rango_rendimiento[1]) / factor_conversion + rango_abandono[1],
+      name = "Tasa de Abandono (%)"
+    )
+  ) +
+  labs(title = "Evolución Temporal del Rendimiento y Abandono Promedio",
+       x = "Año") +
+  scale_color_manual(values = c("Rendimiento" = "red", "Abandono" = "blue")) +
+  theme_minimal() +
+  theme(
+    legend.title = element_blank(),
+    axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+En esta grafica se puede ver la evolucion promedio general de todas las titulaciones a lo largo de los años de estudio.
+
+## Abandono
+
+```{r}
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Abandono_Promedio)) +
+  geom_line(group = 1, color = "blue") +
+  geom_point(color = "blue") + 
+  labs(title = "Evolución Temporal del Abandono Promedio",
+       x = "Año",
+       y = "Tasa de Abandono Promedio") +
+  theme_minimal()
+```
+
+Sacar conclusiones a priori del abandono es complicado ya que los datos representan el porcentaje de estudiantes que se matricularon en cada año que no se han matriculado en los dos siguientes.
+Es decir, el abandono del año 2018_2019 representa el porcentaje de estudiantes que se matricularon en el año 2018_2019 y no se han matriculado ni en el año 2019_2020 ni en el año 2020_2021.
+
+```{r}
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Abandono_Promedio)) +
+  geom_line(group = 1, color = "blue") +
+  geom_point(color = "blue") +
+  labs(title = "Evolución Temporal del Abandono Promedio",
+       x = "Año",
+       y = "Tasa de Abandono Promedio") +
+  theme_minimal() +
+  expand_limits(y = 0) +
+  expand_limits(y = 1)
+```
+
+## Rendimiento
+
+```{r}
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Rendimiento_Promedio)) +
+  geom_line(group = 1, color = "red") +
+  geom_point(color = "red") +
+  labs(title = "Evolución Temporal del Rendimiento Promedio",
+       x = "Año",
+       y = "Tasa de Rendimiento Promedio") +
+  theme_minimal()
+```
+Esta grafica es la misma que se ha visto al principio
+
+A priori se puede ver un pico de rendimiento en el año 2019_2020, justo en el año del COVID-19. Este pico se puede deber al caos academico que produjo ya que se pasaron de clases presenciales a clases online de forma abrupta, lo que produjo una inestabilidad en las calificaciones y una posible subida de estas por las dificultades.
+
+Pasado el año 2019_2020 se puede ver como el rendimiento vuelve a su tendencia normal.
+
+```{r}
+# Crear una copia con índice numérico
+df_con_indice <- df_evolucion_abandono_rendimiento %>%
+  mutate(indice = row_number())
+
+# Obtener los valores antes y después del pico
+valor_antes <- df_con_indice %>% filter(indice == 2) # 2018_2019
+valor_despues <- df_con_indice %>% filter(indice == 5) # 2021_2022
+
+# Interpolar linealmente entre índice 2 y 5
+y1 <- valor_antes$Tasa_Rendimiento_Promedio
+y2 <- valor_despues$Tasa_Rendimiento_Promedio
+x1 <- 2
+x2 <- 5
+
+# Crear la recta desde antes hasta después del pico (índices 2 a 5)
+df_interp <- data.frame(
+  Año = c("2018_2019", "2019_2020", "2020_2021", "2021_2022"),
+  indice = c(2, 3, 4, 5),
+  Tasa_Rendimiento_Promedio = c(
+    y1,
+    y1 + (y2 - y1) / (x2 - x1) * (3 - x1),
+    y1 + (y2 - y1) / (x2 - x1) * (4 - x1),
+    y2
+  )
+)
+
+# Graficar
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Rendimiento_Promedio)) +
+  geom_line(group = 1, color = "red") +
+  geom_point(color = "red") +
+  geom_line(data = df_interp, 
+            color = "blue", linewidth = 1.5, group = 1, linetype = "dashed", alpha = 0.5) +
+  geom_point(data = df_interp, color = "blue", size = 3, shape = 4, alpha = 0.5) +
+  labs(title = "Evolución Temporal del Rendimiento Promedio",
+       x = "Año",
+       y = "Tasa de Rendimiento Promedio") +
+  theme_minimal()
+```
+Como se puede ver en esta grafica, si realizamos una interpolacion de los datos entre los años 2018_2019 y 2021_2022, se puede ver que el pico del año 2019_2020 no afectó a la tendencia del rendimiento.
+
+```{r}
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Rendimiento_Promedio)) +
+  geom_line(group = 1, color = "red") +
+  geom_point(color = "red") +
+  labs(title = "Evolución Temporal del Rendimiento Promedio",
+       x = "Año",
+       y = "Tasa de Rendimiento Promedio") +
+  geom_line(data = df_interp, 
+            color = "blue", linewidth = 1, group = 1, linetype = "dashed", alpha = 0.5) +
+  geom_point(data = df_interp, color = "blue", size = 3, shape = 4, alpha = 0.5) +
+  theme_minimal() +
+  expand_limits(y = 0) +
+  expand_limits(y = 1)
+```
+
+Además si aumentamos la escala del eje Y para que empiece en 0 y podamos ver todo el rango de la variable, se puede ver que el pico fue relativamente pequeño
+
+# Evolucion por centro
+
+
+```{r}
+df_evolucion_centro = df_abandono_rendimiento %>%
+  group_by(Año, Cod_Centro) %>%
+  summarise(Tasa_Rendimiento_Promedio = mean(Tasa_Rendimiento),
+            Tasa_Abandono_Promedio = mean(Tasa_Abandono))
+df_evolucion_centro <- df_evolucion_centro %>%
+  left_join(df_codigo_centro, by = c("Cod_Centro" = "Cod_Centro"))
+```
+
+## Abandono
+
+```{r}
+ggplot(df_evolucion_centro, aes(x = Año, y = Tasa_Abandono_Promedio, color = Nombre_Centro)) +
+  geom_line(aes(group = Cod_Centro), linewidth = 0.7) +
+  geom_point(size = 1.5) +
+  facet_wrap(~Nombre_Centro, ncol = 4) +
+  labs(title = "Evolución Temporal del Abandono Promedio por Centro",
+       x = "Año",
+       y = "Tasa de Abandono Promedio") +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(size = 9)
+  )
+
+ggsave("images/grafica_evolucion_abandono_centros_facetas.png", width = 16, height = 12, dpi = 300)
+```
+
+## Rendimiento
+
+```{r}
+ggplot(df_evolucion_centro, aes(x = Año, y = Tasa_Rendimiento_Promedio, color = Nombre_Centro)) +
+  geom_line(aes(group = Cod_Centro), linewidth = 0.7) +
+  geom_point(size = 1.5) +
+  facet_wrap(~Nombre_Centro, ncol = 4) +
+  labs(title = "Evolución Temporal del Rendimiento Promedio por Centro",
+       x = "Año",
+       y = "Tasa de Rendimiento Promedio") +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(size = 9)
+  )
+
+ggsave("images/grafica_evolucion_rendimiento_centros_facetas.png", width = 16, height = 12, dpi = 300)
+```
+
+# Evolucion por titulacion
+
+```{r}
+# filtramos por un Cod_Titulacion
+df_filtrado = df_abandono_rendimiento %>%
+  filter(Cod_Titulacion == "151") %>%
+  group_by(Año) %>%
+  summarise(Tasa_Rendimiento_Promedio = Tasa_Rendimiento,
+            Tasa_Abandono_Promedio = Tasa_Abandono)
+df_filtrado
+```
+
+
+## Abandono
+
+```{r}
+
+# Calcula los rangos de cada variable
+rango_rendimiento <- range(df_filtrado$Tasa_Rendimiento_Promedio, na.rm = TRUE)
+rango_abandono <- range(df_filtrado$Tasa_Abandono_Promedio, na.rm = TRUE)
+
+# Factor de conversión de la escala derecha a la izquierda
+factor_conversion <- (rango_rendimiento[2] - rango_rendimiento[1]) / 
+                     (rango_abandono[2] - rango_abandono[1])
+
+ggplot(df_filtrado, aes(x = Año)) +
+  geom_line(aes(y = Tasa_Rendimiento_Promedio, color = "Rendimiento"), group = 1) +
+  geom_point(aes(y = Tasa_Rendimiento_Promedio, color = "Rendimiento"), color = "red") +
+  geom_line(aes(y = (Tasa_Abandono_Promedio - rango_abandono[1]) * factor_conversion + rango_rendimiento[1], 
+                color = "Abandono"), group = 1) +
+  geom_point(aes(y = (Tasa_Abandono_Promedio - rango_abandono[1]) * factor_conversion + rango_rendimiento[1], 
+                 color = "Abandono"), color = "blue") +
+  scale_y_continuous(
+    name = "Tasa de Rendimiento (%)",
+    limits = rango_rendimiento,
+    sec.axis = sec_axis(
+      trans = ~(. - rango_rendimiento[1]) / factor_conversion + rango_abandono[1],
+      name = "Tasa de Abandono (%)"
+    )
+  ) +
+  labs(title = "Evolución Temporal del Rendimiento y Abandono Promedio",
+       x = "Año") +
+  scale_color_manual(values = c("Rendimiento" = "red", "Abandono" = "blue")) +
+  theme_minimal() +
+  theme(
+    legend.title = element_blank(),
+    axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## Rendimiento
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
