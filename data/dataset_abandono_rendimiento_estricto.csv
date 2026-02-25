@@ -1,4 +1,4 @@
-Cod_Centro,Cod_Titulacion,Titulacion,Año,Tasa_Rendimiento,Alumnos_Egresados,Matriculados_Rendimiento,Tasa_Abandono,Alumnos_Abandonan,Matriculados_Abandono
+Cod_Centro,Cod_Titulacion,Titulacion,Año,Tasa_Rendimiento,Todo_aprobado_Rendimiento,Matriculados_Rendimiento,Tasa_Abandono,Alumnos_Abandonan,Matriculados_Abandono
 1,151,Grado en Administración y Dirección de Empresas,2017_2018,0.5526591289782244,63348,114624,0.311284046692607,160,514
 1,151,Grado en Administración y Dirección de Empresas,2018_2019,0.5704945692291469,64920,113796,0.3652694610778443,183,501
 1,151,Grado en Administración y Dirección de Empresas,2019_2020,0.6848913704461275,74334,108534,0.37067209775967414,182,491
