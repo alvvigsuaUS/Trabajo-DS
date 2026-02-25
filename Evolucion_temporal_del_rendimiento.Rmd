@@ -289,6 +289,8 @@ ggplot(df_evolucion_centro, aes(x = Año, y = Tasa_Rendimiento_Promedio, color =
 ggsave("images/grafica_evolucion_rendimiento_centros_facetas.png", width = 16, height = 12, dpi = 300)
 ```
 
+En esta grafica se puede ver como hay centros que tienen una tendencia más estable que otros
+
 Si calculamos la diferencia entre el rendimiento del año 2019_2020 y el rendimiento del año 2018_2019, podemos ver mejor el aumento del rendimiento segun el centro
 
 #### Grafica de diferencia de rendimiento entre el año 2018_2019 y el año 2019_2020 por centro
@@ -430,6 +432,7 @@ ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Abandono_Promed
 ```
 Una cosa clara que vimos al principio es la correlación negativa entre el rendimiento y el abandono. Esto nos dice que el abandono y el rendimiento estan ligados.
 
+#### Grafica de rendimiento y abandono general
 ```{r}
 rango_rendimiento <- range(df_evolucion_abandono_rendimiento$Tasa_Rendimiento_Promedio, na.rm = TRUE)
 rango_abandono <- range(df_evolucion_abandono_rendimiento$Tasa_Abandono_Promedio, na.rm = TRUE)
@@ -463,19 +466,131 @@ ggplot(df_evolucion_abandono_rendimiento, aes(x = Año)) +
 
 A pesar de haber una correlación entre estas variables, no se puede saber con certeza si una influencia a la otra. No obstante, esta claro que esta relación no es casualidad ya que si un estudiante abandona suele no completar sus creditos, por lo que si el rendimiento baja, sube el abandono. Esto puede ocurrir tambien al contrario, si un estudiante tiene un rendimiento bajo, se plantee abandonar.
 
+#### Grafica de rendimiento por centro
+```{r}
+df_evolucion_centro = df_abandono_rendimiento %>%
+  group_by(Año, Cod_Centro) %>%
+  summarise(Tasa_Rendimiento_Promedio = mean(Tasa_Rendimiento),
+            Tasa_Abandono_Promedio = mean(Tasa_Abandono))
+df_evolucion_centro <- df_evolucion_centro %>%
+  left_join(df_codigo_centro, by = c("Cod_Centro" = "Cod_Centro"))
 
+ggplot(df_evolucion_centro, aes(x = Año, y = Tasa_Abandono_Promedio, color = Nombre_Centro)) +
+  geom_line(aes(group = Cod_Centro), linewidth = 0.7) +
+  geom_point(size = 1.5) +
+  facet_wrap(~Nombre_Centro, ncol = 4) +
+  labs(title = "Evolución Temporal del Abandono Promedio por Centro",
+       x = "Año",
+       y = "Tasa de Abandono Promedio") +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(size = 9)
+  )
 
+ggsave("images/grafica_evolucion_abandono_centros_facetas.png", width = 16, height = 12, dpi = 300)
+```
 
+Con el abandono se ve lo mismo que con el rendimiento, hay centros que tienen una tendencia más estable que otros, aunque en general todos los centros siguen una tendencia similar a la del abandono general, con un mayor caos debido a que hay que tener en cuenta los 2 años que tienen que pasar para que un estudiante abandone.
 
+#### Grafica de abandono general
+```{r}
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Abandono_Promedio)) +
+  geom_line(group = 1, color = "blue") +
+  geom_point(color = "blue") +
+  labs(title = "Evolución Temporal del Abandono Promedio",
+       x = "Año",
+       y = "Tasa de Abandono Promedio") +
+  theme_minimal()
+```
 
+Si volvemos a la gráfica anterior, se puede ver una bajada del rendimiento durante los años 2019_2020 y 2020_2021, una posible causa de esto se puede deber al aumento de rendimiento durante esos años, que causó que los estudiantes superaran alguna asignatura dificil y decidieran contituar con la titulación.
 
+#### Grafica de diferencia de abandono entre el año 2018_2019 y el año 2019_2020 por centro 
+```{r}
+df_evolucion_centro_diff <- df_evolucion_centro %>%
+  group_by(Cod_Centro) %>%
+  mutate(Diferencia_Rendimiento = Tasa_Rendimiento_Promedio - lag(Tasa_Rendimiento_Promedio),
+         Diferencia_Abandono = Tasa_Abandono_Promedio - lag(Tasa_Abandono_Promedio))
 
+# grafico de barras
+ggplot(df_evolucion_centro_diff %>% filter(Año == "2018_2019"), aes(x = reorder(Nombre_Centro, Diferencia_Abandono), y = Diferencia_Abandono, fill = Nombre_Centro)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Desviación de abandono en 2018_2019",
+       x = "Centro",
+       y = "Diferencia de Abandono") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
 
+ggsave("images/grafica_diferencia_abandono_centros_18_19.png", width = 8, height = 6, dpi = 300)
+```
 
+Se puede ver al comparar las gráficas que la hipotesis previa tiene parte de sentido, ya que titulaciones que estaban en crecimiento de abandono, al año siguiente pasaron a reducir en gran medida el abandono.
 
+#### Grafica de diferencia de abandono entre el año 2018_2019 y el año 2019_2020 por centro 
+```{r}
+df_evolucion_centro_diff <- df_evolucion_centro %>%
+  group_by(Cod_Centro) %>%
+  mutate(Diferencia_Rendimiento = Tasa_Rendimiento_Promedio - lag(Tasa_Rendimiento_Promedio),
+         Diferencia_Abandono = Tasa_Abandono_Promedio - lag(Tasa_Abandono_Promedio))
 
+# grafico de barras
+ggplot(df_evolucion_centro_diff %>% filter(Año == "2019_2020"), aes(x = reorder(Nombre_Centro, Diferencia_Abandono), y = Diferencia_Abandono, fill = Nombre_Centro)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Desviación de abandono en 2019_2020",
+       x = "Centro",
+       y = "Diferencia de Abandono") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
 
+ggsave("images/grafica_diferencia_abandono_centros_19_20.png", width = 8, height = 6, dpi = 300)
+```
+Un claro ejemplo es la facultad de matemáticas, que en el año 2018_2019 fue el centro con mayor aumento de abandono y en 2019_2020 ha pasado a ser el centro con mayor disminucion de abandono.
 
+#### Grafica de diferencia de abandono entre el año 2019_2020 y el año 2020_2021 por centro 
+```{r}
+df_evolucion_centro_diff <- df_evolucion_centro %>%
+  group_by(Cod_Centro) %>%
+  mutate(Diferencia_Rendimiento = Tasa_Rendimiento_Promedio - lag(Tasa_Rendimiento_Promedio),
+         Diferencia_Abandono = Tasa_Abandono_Promedio - lag(Tasa_Abandono_Promedio))
+
+# grafico de barras
+ggplot(df_evolucion_centro_diff %>% filter(Año == "2020_2021"), aes(x = reorder(Nombre_Centro, Diferencia_Abandono), y = Diferencia_Abandono, fill = Nombre_Centro)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Desviación de abandono en 2020_2021",
+       x = "Centro",
+       y = "Diferencia de Abandono") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
+
+ggsave("images/grafica_diferencia_abandono_centros_20_21.png", width = 8, height = 6, dpi = 300)
+```
+
+En el segundo año se puede ver que algunas de las anteriores siguen reduciendo el rendmiento y otras que anteriormente lo aumentaron lo han reducido en este año. Esto se puede deber a las 2 etapas de covid donde en la anterior fué el confinamiento y en la posterior se tuvo un periodo de adaptación donde las clases aparentaban mas sencillas.
+
+#### Grafica de diferencia de abandono entre el año 2020_2021 y el año 2021_2022 por centro 
+```{r}
+df_evolucion_centro_diff <- df_evolucion_centro %>%
+  group_by(Cod_Centro) %>%
+  mutate(Diferencia_Rendimiento = Tasa_Rendimiento_Promedio - lag(Tasa_Rendimiento_Promedio),
+         Diferencia_Abandono = Tasa_Abandono_Promedio - lag(Tasa_Abandono_Promedio))
+
+# grafico de barras
+ggplot(df_evolucion_centro_diff %>% filter(Año == "2021_2022"), aes(x = reorder(Nombre_Centro, Diferencia_Abandono), y = Diferencia_Abandono, fill = Nombre_Centro)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Desviación de abandono en 2021_2022",
+       x = "Centro",
+       y = "Diferencia de Abandono") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
+
+ggsave("images/grafica_diferencia_abandono_centros_21_22.png", width = 8, height = 6, dpi = 300)
+```
 
 
 
