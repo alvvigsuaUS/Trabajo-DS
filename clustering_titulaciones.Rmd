@@ -1,13 +1,17 @@
 ---
-title: "Agrupamiento de Titulaciones en Clústeres: Análisis de Rendimiento y Abandono"
+title: 'Agrupamiento de Titulaciones en Clústeres: Análisis de Rendimiento y Abandono'
 author: "Equipo Data Science"
 date: "`r Sys.Date()`"
 output:
+  word_document:
+    toc: true
   html_document:
     toc: true
     toc_float: true
     theme: flatly
     highlight: tango
+  pdf_document:
+    toc: true
 ---
 
 ```{r setup, include=FALSE}
@@ -41,7 +45,7 @@ Este análisis responde a la pregunta grupal: **"Las titulaciones pueden agrupar
 
 ## 1.2 Diseño del Análisis
 
--   **Variables**: Tasa de Rendimiento (1.6) y Tasa de Abandono (1.11)
+-   **Variables**: Tasa de Rendimiento y Tasa de Abandono
 -   **Método**: K-means clustering tras normalización de datos
 -   **Visualización**: Gráfico de dispersión coloreado por clúster
 
@@ -583,7 +587,6 @@ if (nrow(q1_data) > 0) {
   cat("  - Documentar y replicar buenas prácticas en otras titulaciones\n")
   cat("  - Usar como referencia para programas de mejora\n")
   cat("  - Investigar factores de éxito (recursos, profesorado, estructura)\n")
-  cat("  - Posibles roles de 'centros de excelencia' dentro de la universidad\n\n")
   cat("Titulaciones:\n")
   for (i in 1:nrow(q1_data)) {
     cat(sprintf("    • %s (Rend: %.1f%%, Aband: %.1f%%)\n",
@@ -607,8 +610,6 @@ if (nrow(q2_data) > 0) {
   cat("  - Análisis detallado: ¿abandonan estudiantes con bajo rendimiento o con bueno?\n")
   cat("  - Posibles causas no académicas: horarios incompatibles, coste, compatibilidad laboral\n")
   cat("  - Considerar modalidades alternativas (semipresencial, flexible)\n")
-  cat("  - Mejorar orientación académica y tutoría desde inicio\n")
-  cat("  - Revisar estructura y calendario académico\n\n")
   cat("Titulaciones:\n")
   for (i in 1:nrow(q2_data)) {
     cat(sprintf("    • %s (Rend: %.1f%%, Aband: %.1f%%)\n",
@@ -632,8 +633,6 @@ if (nrow(q3_data) > 0) {
   cat("  - Estudiantes se quedan pero arrastrando asignaturas (acumulan suspensos)\n")
   cat("  - Revisar plan de estudios y secuenciación de asignaturas\n")
   cat("  - Fortalecer apoyo académico (tutorías, refuerzo en asignaturas básicas)\n")
-  cat("  - Evaluar programa de apoyo psicopedagógico\n")
-  cat("  - Considerar rutas alternativas o salidas profesionales tempranas\n\n")
   cat("Titulaciones:\n")
   for (i in 1:nrow(q3_data)) {
     cat(sprintf("    • %s (Rend: %.1f%%, Aband: %.1f%%)\n",
@@ -647,21 +646,16 @@ if (nrow(q3_data) > 0) {
 # Q4: EN RIESGO
 q4_data <- titulaciones_quadrants %>% filter(str_detect(Cuadrante, "Q4"))
 if (nrow(q4_data) > 0) {
-  cat("Q4: EN RIESGO | (Bajo Rendimiento, Alto Abandono) ⚠⚠⚠ PRIORIDAD MÁXIMA\n")
+  cat("Q4: EN RIESGO | (Bajo Rendimiento, Alto Abandono) PRIORIDAD MÁXIMA\n")
   cat(strrep("-", 130), "\n")
   cat("Número de titulaciones:", nrow(q4_data), "\n")
   cat("Rendimiento promedio:", scales::percent(mean(q4_data$Tasa_Rendimiento)), "\n")
   cat("Abandono promedio:", scales::percent(mean(q4_data$Tasa_Abandono)), "\n\n")
   cat("RECOMENDACIONES: (INTERVENCIÓN URGENTE E INMEDIATA)\n")
-  cat("  - PRIORIDAD MÁXIMA para intervención institucional\n")
   cat("  - Posibles problemas estructurales o expectativas no cumplidas\n")
   cat("  - Revisión profunda del plan de estudios (objetivos, contenidos, metodología)\n")
   cat("  - Evaluación completa del cuerpo docente y recursos disponibles\n")
   cat("  - Mejorar información pre-matriculación (expectativas realistas)\n")
-  cat("  - Implementar programa intensivo de tutoría desde primer semestre\n")
-  cat("  - Crear sistema de alerta temprana para detección de riesgo académico\n")
-  cat("  - Considerar cambios curriculares o restructuración completa\n")
-  cat("  - Evaluar posible cierre, fusión o reducción de plazas\n\n")
   cat("Titulaciones:\n")
   for (i in 1:nrow(q4_data)) {
     cat(sprintf("    • %s (Rend: %.1f%%, Aband: %.1f%%)\n",
@@ -672,13 +666,6 @@ if (nrow(q4_data) > 0) {
   cat("\n\n")
 }
 
-cat(strrep("=", 130), "\n")
-cat("MATRIZ GENERAL DE PRIORIDADES DE INTERVENCIÓN\n")
-cat(strrep("=", 130), "\n")
-cat("1. PRIORITARIO ABSOLUTO: Q4 (En Riesgo) - Bajo rendimiento + Alto abandono\n")
-cat("2. PRIORITARIO: Q3 (Problemático) - Bajo rendimiento + Bajo abandono\n")
-cat("3. MODERADO: Q2 (Abandono Selectivo) - Alto rendimiento + Alto abandono\n")
-cat("4. MANTENIMIENTO: Q1 (Exitosas) - Alto rendimiento + Bajo abandono\n")
 ```
 
 ------------------------------------------------------------------------
@@ -707,7 +694,6 @@ for (i in 1:n_clusters) {
 cat("3. IMPLICACIONES PARA LA INTERVENCIÓN INSTITUCIONAL:\n")
 cat("   • Permite identificación de titulaciones en riesgo\n")
 cat("   • Facilita diseño de intervenciones personalizadas\n")
-cat("   • Proporciona base empírica para priorización de recursos\n\n")
 
 cat("4. CALIDAD DEL MODELO:\n")
 cat(sprintf("   • Coeficiente de Silhueta: %.4f\n", mean(silhouette_coef[, "sil_width"])))
