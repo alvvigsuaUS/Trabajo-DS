@@ -1,0 +1,65 @@
+---
+title: "Filtrar dataset 2022_2023"
+output: html_document
+---
+
+```{r}
+# Ruta del archivo de entrada
+input_path <- "C:/Users/User/Downloads/ds/Trabajo-DS/data/dataset_abandono_rendimiento_estricto.csv"
+
+# Ruta del archivo de salida
+output_path <- "C:/Users/User/Downloads/ds/Trabajo-DS/data/dataset_abandono_rendimiento_estricto_2022_2023.csv"
+
+# Rutas de archivos de demanda
+demanda_centros_input_path <- "C:/Users/User/Downloads/ds/Trabajo-DS/data/dataset_demanda_centros.csv"
+demanda_ramas_input_path <- "C:/Users/User/Downloads/ds/Trabajo-DS/data/dataset_demanda_ramas.csv"
+
+# Rutas de salida de demanda filtrada
+demanda_centros_output_path <- "C:/Users/User/Downloads/ds/Trabajo-DS/data/dataset_demanda_centros_match_titulacion_2022_2023.csv"
+demanda_ramas_output_path <- "C:/Users/User/Downloads/ds/Trabajo-DS/data/dataset_demanda_ramas_match_titulacion_2022_2023.csv"
+
+# Leer CSV
+df <- read.csv(input_path, stringsAsFactors = FALSE, check.names = FALSE)
+
+# Validar que exista la columna de año
+if (!("Año" %in% names(df))) {
+  stop("No se encontró la columna 'Año' en el dataset.")
+}
+
+# Filtrar solo el curso 2022_2023
+df_2022_2023 <- df[df$Año == "2022_2023", ]
+
+# Conjunto de titulaciones del dataset filtrado
+titulaciones_2022_2023 <- unique(trimws(df_2022_2023$Titulacion))
+
+# Leer datasets de demanda
+demanda_centros <- read.csv(demanda_centros_input_path, stringsAsFactors = FALSE, check.names = FALSE)
+demanda_ramas <- read.csv(demanda_ramas_input_path, stringsAsFactors = FALSE, check.names = FALSE)
+
+# Validar que exista la columna de titulación en demanda
+if (!("Titulación" %in% names(demanda_centros))) {
+  stop("No se encontró la columna 'Titulación' en dataset_demanda_centros.csv.")
+}
+
+if (!("Titulación" %in% names(demanda_ramas))) {
+  stop("No se encontró la columna 'Titulación' en dataset_demanda_ramas.csv.")
+}
+
+# Filtrar demanda por titulaciones que coinciden con el dataset de 2022_2023
+demanda_centros_filtrado <- demanda_centros[trimws(demanda_centros$Titulación) %in% titulaciones_2022_2023, ]
+demanda_ramas_filtrado <- demanda_ramas[trimws(demanda_ramas$Titulación) %in% titulaciones_2022_2023, ]
+
+# Guardar nuevo CSV
+write.csv(df_2022_2023, output_path, row.names = FALSE, fileEncoding = "UTF-8")
+
+# Guardar datasets de demanda filtrados
+write.csv(demanda_centros_filtrado, demanda_centros_output_path, row.names = FALSE, fileEncoding = "UTF-8")
+write.csv(demanda_ramas_filtrado, demanda_ramas_output_path, row.names = FALSE, fileEncoding = "UTF-8")
+
+cat("Archivo generado:", output_path, "\n")
+cat("Filas exportadas:", nrow(df_2022_2023), "\n")
+cat("Archivo generado:", demanda_centros_output_path, "\n")
+cat("Filas exportadas:", nrow(demanda_centros_filtrado), "\n")
+cat("Archivo generado:", demanda_ramas_output_path, "\n")
+cat("Filas exportadas:", nrow(demanda_ramas_filtrado), "\n")
+```

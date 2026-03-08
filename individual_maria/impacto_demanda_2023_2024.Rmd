@@ -1,0 +1,266 @@
+---
+title: "María · Impacto de la trayectoria académica en la demanda (con perspectiva de género)"
+output: html_document
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+
+options(scipen = 999)
+```
+
+## 1) Carga de datos
+
+```{r carga}
+resolver_path <- function(file_name) {
+  candidates <- c(
+    file.path("data", file_name),
+    file.path("..", "data", file_name),
+    file.path("Trabajo-DS", "data", file_name)
+  )
+
+  idx <- which(file.exists(candidates))[1]
+  if (is.na(idx)) {
+    stop(
+      paste0(
+        "No se encontró el archivo '", file_name, "'. Revisa el directorio de trabajo (getwd()) y la carpeta data/. "
+      )
+    )
+  }
+
+  candidates[idx]
+}
+
+path_ab <- resolver_path("dataset_abandono_rendimiento_estricto_2022_2023.csv")
+path_dem_centros <- resolver_path("dataset_demanda_centros_match_titulacion_2022_2023.csv")
+path_dem_ramas <- resolver_path("dataset_demanda_ramas_match_titulacion_2022_2023.csv")
+
+ab <- read.csv(path_ab, check.names = FALSE, stringsAsFactors = FALSE)
+dem_centros <- read.csv(path_dem_centros, check.names = FALSE, stringsAsFactors = FALSE)
+dem_ramas <- read.csv(path_dem_ramas, check.names = FALSE, stringsAsFactors = FALSE)
+
+# Normalización básica de nombres y tipos
+names(dem_centros)[names(dem_centros) == "Titulación"] <- "Titulacion"
+names(dem_ramas)[names(dem_ramas) == "Titulación"] <- "Titulacion"
+
+for (col in c("Hombre", "Mujer", "Total")) {
+  dem_centros[[col]] <- as.numeric(dem_centros[[col]])
+  dem_ramas[[col]] <- as.numeric(dem_ramas[[col]])
+}
+
+# Limpieza de espacios
+ab <- ab %>% mutate(Titulacion = trimws(Titulacion))
+dem_centros <- dem_centros %>% mutate(Titulacion = trimws(Titulacion))
+dem_ramas <- dem_ramas %>% mutate(Titulacion = trimws(Titulacion))
+
+cat("Filas abandono/rendimiento 2022_2023:", nrow(ab), "\n")
+cat("Filas demanda centros (match):", nrow(dem_centros), "\n")
+cat("Filas demanda ramas (match):", nrow(dem_ramas), "\n")
+```
+
+## 2) Cruce principal para el análisis
+
+```{r cruce-principal}
+# Dataset principal para análisis (incluye rama para facet)
+base <- ab %>%
+  inner_join(
+    dem_ramas %>% select(`Rama de enseñanza`, Titulacion, Hombre, Mujer, Total),
+    by = "Titulacion"
+  )
+
+# Uso explícito del dataset de centros para contraste de consistencia
+dem_centros_resumen <- dem_centros %>%
+  group_by(Titulacion) %>%
+  summarise(
+    Hombre_centros = sum(Hombre, na.rm = TRUE),
+    Mujer_centros = sum(Mujer, na.rm = TRUE),
+    Total_centros = sum(Total, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+consistencia_demanda <- base %>%
+  left_join(dem_centros_resumen, by = "Titulacion") %>%
+  mutate(
+    diff_total_ramas_vs_centros = Total - Total_centros
+  )
+
+# Clasificación para scatter de cuadrantes (mediana abandono vs mediana demanda)
+med_ab <- median(base$Tasa_Abandono, na.rm = TRUE)
+med_dem <- median(base$Total, na.rm = TRUE)
+
+base <- base %>%
+  mutate(
+    categoria = case_when(
+      Tasa_Abandono <= med_ab & Total >= med_dem ~ "éxito",
+      Tasa_Abandono > med_ab & Total >= med_dem ~ "vocacionales",
+      Tasa_Abandono <= med_ab & Total < med_dem ~ "nicho",
+      TRUE ~ "en crisis"
+    )
+  )
+
+cat("Titulaciones en cruce final:", nrow(base), "\n")
+cat("Diferencia media Total (ramas - centros):",
+  round(mean(consistencia_demanda$diff_total_ramas_vs_centros, na.rm = TRUE), 3), "\n")
+kable(head(base %>% select(Titulacion, `Rama de enseñanza`, Tasa_Abandono, Tasa_Rendimiento, Hombre, Mujer, Total, categoria), 10))
+```
+
+## 3) Scatter plot: abandono histórico vs demanda total 2023/24
+
+```{r scatter-general, fig.width=10, fig.height=6}
+ggplot(base, aes(x = Tasa_Abandono, y = Total, color = categoria)) +
+  geom_point(aes(alpha = Tasa_Rendimiento), size = 3) +
+  geom_smooth(method = "lm", se = TRUE, color = "black", linewidth = 0.7) +
+  geom_vline(xintercept = med_ab, linetype = "dashed", color = "grey40") +
+  geom_hline(yintercept = med_dem, linetype = "dashed", color = "grey40") +
+  scale_alpha_continuous(range = c(0.35, 1)) +
+  labs(
+    title = "Demanda 2023/24 vs Tasa de Abandono (histórica 2022/23)",
+    subtitle = "Color: categoría (éxito/vocacionales/nicho/en crisis) · Alpha: tasa de rendimiento",
+    x = "Tasa de abandono",
+    y = "Volumen de demanda total 2023/24",
+    color = "Categoría",
+    alpha = "Tasa de rendimiento"
+  ) +
+  theme_minimal()
+```
+
+## 4) Facet grid por rama y género
+
+```{r facet-genero, fig.width=11, fig.height=7}
+base_long <- base %>%
+  select(Titulacion, `Rama de enseñanza`, Tasa_Abandono, Tasa_Rendimiento, Hombre, Mujer) %>%
+  pivot_longer(cols = c(Hombre, Mujer), names_to = "Genero", values_to = "Demanda")
+
+ggplot(base_long, aes(x = Tasa_Abandono, y = Demanda, color = Genero)) +
+  geom_point(aes(alpha = Tasa_Rendimiento), size = 2.5) +
+  geom_smooth(method = "lm", se = FALSE, linewidth = 0.8) +
+  scale_alpha_continuous(range = c(0.35, 1)) +
+  facet_wrap(~ `Rama de enseñanza`) +
+  labs(
+    title = "Correlación Demanda vs Abandono por género y rama",
+    x = "Tasa de abandono (histórica 2022/23)",
+    y = "Demanda 2023/24",
+    color = "Género",
+    alpha = "Tasa de rendimiento"
+  ) +
+  theme_minimal()
+```
+
+## 5) Evidencia cuantitativa
+
+```{r evidencia}
+# Correlaciones globales
+corr_global <- data.frame(
+  indicador = c(
+    "corr(Abandono, Demanda total)",
+    "corr(Abandono, Demanda hombres)",
+    "corr(Abandono, Demanda mujeres)",
+    "corr(Rendimiento, Demanda total)",
+    "corr(Rendimiento, Demanda hombres)",
+    "corr(Rendimiento, Demanda mujeres)"
+  ),
+  valor = c(
+    cor(base$Tasa_Abandono, base$Total, use = "complete.obs"),
+    cor(base$Tasa_Abandono, base$Hombre, use = "complete.obs"),
+    cor(base$Tasa_Abandono, base$Mujer, use = "complete.obs"),
+    cor(base$Tasa_Rendimiento, base$Total, use = "complete.obs"),
+    cor(base$Tasa_Rendimiento, base$Hombre, use = "complete.obs"),
+    cor(base$Tasa_Rendimiento, base$Mujer, use = "complete.obs")
+  )
+)
+
+kable(corr_global %>% mutate(valor = round(valor, 3)), caption = "Correlaciones globales")
+
+# Modelos lineales simples
+m_h_ab <- summary(lm(Hombre ~ Tasa_Abandono, data = base))
+m_m_ab <- summary(lm(Mujer ~ Tasa_Abandono, data = base))
+m_h_re <- summary(lm(Hombre ~ Tasa_Rendimiento, data = base))
+m_m_re <- summary(lm(Mujer ~ Tasa_Rendimiento, data = base))
+
+modelos <- data.frame(
+  modelo = c("Hombre ~ Abandono", "Mujer ~ Abandono", "Hombre ~ Rendimiento", "Mujer ~ Rendimiento"),
+  pendiente = c(coef(m_h_ab)[2, 1], coef(m_m_ab)[2, 1], coef(m_h_re)[2, 1], coef(m_m_re)[2, 1]),
+  p_value = c(coef(m_h_ab)[2, 4], coef(m_m_ab)[2, 4], coef(m_h_re)[2, 4], coef(m_m_re)[2, 4]),
+  r2 = c(m_h_ab$r.squared, m_m_ab$r.squared, m_h_re$r.squared, m_m_re$r.squared)
+)
+
+kable(modelos %>% mutate(across(c(pendiente, p_value, r2), ~ round(., 4))), caption = "Modelos lineales globales")
+
+# Correlación por rama y género
+corr_rama_genero <- base_long %>%
+  group_by(`Rama de enseñanza`, Genero) %>%
+  summarise(
+    n = n(),
+    corr_abandono_demanda = cor(Tasa_Abandono, Demanda, use = "complete.obs"),
+    corr_rendimiento_demanda = cor(Tasa_Rendimiento, Demanda, use = "complete.obs"),
+    .groups = "drop"
+  )
+
+kable(corr_rama_genero %>% mutate(across(c(corr_abandono_demanda, corr_rendimiento_demanda), ~ round(., 3))), caption = "Correlaciones por rama y género")
+```
+
+## 6) Respuesta efectiva a la pregunta
+
+```{r respuesta-automatica, results='asis'}
+clasificar_efecto <- function(cor_val) {
+  if (is.na(cor_val)) return("sin evidencia")
+  if (abs(cor_val) < 0.20) return("efecto débil")
+  if (abs(cor_val) < 0.40) return("efecto moderado")
+  return("efecto fuerte")
+}
+
+c_ab_h <- cor(base$Tasa_Abandono, base$Hombre, use = "complete.obs")
+c_ab_m <- cor(base$Tasa_Abandono, base$Mujer, use = "complete.obs")
+c_re_h <- cor(base$Tasa_Rendimiento, base$Hombre, use = "complete.obs")
+c_re_m <- cor(base$Tasa_Rendimiento, base$Mujer, use = "complete.obs")
+
+q1_ab <- quantile(base$Tasa_Abandono, 0.25, na.rm = TRUE)
+q1_h <- quantile(base$Hombre, 0.25, na.rm = TRUE)
+q1_m <- quantile(base$Mujer, 0.25, na.rm = TRUE)
+
+brecha_h <- base %>%
+  filter(Tasa_Abandono <= q1_ab, Hombre <= q1_h) %>%
+  arrange(Hombre) %>%
+  select(Titulacion, `Rama de enseñanza`, Tasa_Abandono, Tasa_Rendimiento, Hombre, Mujer, Total)
+
+brecha_m <- base %>%
+  filter(Tasa_Abandono <= q1_ab, Mujer <= q1_m) %>%
+  arrange(Mujer) %>%
+  select(Titulacion, `Rama de enseñanza`, Tasa_Abandono, Tasa_Rendimiento, Hombre, Mujer, Total)
+
+cat("### Conclusión general\n")
+cat("Con los datos 2022/23 (abandono/rendimiento) y demanda 2023/24, el abandono histórico muestra una relación ",
+    clasificar_efecto(cor(base$Tasa_Abandono, base$Total, use = 'complete.obs')),
+    " con la demanda total. \n\n", sep = "")
+
+cat("### 1) ¿Influye el 'riesgo' académico en la elección por género?\n")
+cat("- Hombres: corr(Abandono, Demanda) = ", round(c_ab_h, 3), " (", clasificar_efecto(c_ab_h), ")\n", sep = "")
+cat("- Mujeres: corr(Abandono, Demanda) = ", round(c_ab_m, 3), " (", clasificar_efecto(c_ab_m), ")\n", sep = "")
+cat("Interpretación: la aversión/tolerancia al riesgo no es homogénea; cambia según rama (ver tabla por rama y facet grid).\n\n")
+
+cat("### 2) ¿Es el rendimiento predictor de la demanda femenina/masculina?\n")
+cat("- Hombres: corr(Rendimiento, Demanda) = ", round(c_re_h, 3), " (", clasificar_efecto(c_re_h), ")\n", sep = "")
+cat("- Mujeres: corr(Rendimiento, Demanda) = ", round(c_re_m, 3), " (", clasificar_efecto(c_re_m), ")\n", sep = "")
+cat("Interpretación: si el efecto es débil/moderado, el rendimiento explica parte de la demanda, pero no todo (pesan también preferencias vocacionales y estructura de rama).\n\n")
+
+cat("### 3) Brechas: titulaciones 'fáciles' (bajo abandono) con baja atracción por género\n")
+
+if (nrow(brecha_h) == 0) {
+  cat("- No aparecen casos claros de baja demanda masculina dentro del cuartil de menor abandono.\n\n")
+} else {
+  cat("- Posibles brechas en hombres (top 10):\n\n")
+  cat(knitr::kable(head(brecha_h, 10), digits = 3), sep = "\n")
+  cat("\n\n")
+}
+
+if (nrow(brecha_m) == 0) {
+  cat("- No aparecen casos claros de baja demanda femenina dentro del cuartil de menor abandono.\n\n")
+} else {
+  cat("- Posibles brechas en mujeres (top 10):\n\n")
+  cat(knitr::kable(head(brecha_m, 10), digits = 3), sep = "\n")
+  cat("\n\n")
+}
+```
