@@ -1,0 +1,347 @@
+Curso,Media,NumEncuestas,Centro,Titulacion.x,Cod_Centro,Cod_Titulacion,Titulacion.y,Tasa_Rendimiento,Alumnos_Egresados,Matriculados_Rendimiento,Tasa_Abandono,Alumnos_Abandonan,Matriculados_Abandono
+2017_2018,4.05,659,Escuela Politécnica Superior,Grado en Ingeniería Eléctrica,23,200,Grado en Ingeniería Eléctrica,0.4730960264900662,6858,14496,0.29545454545454547,39,132
+2017_2018,4.02,1359,Escuela Politécnica Superior,Grado en Ingeniería Electrónica Industrial,23,201,Grado en Ingeniería Electrónica Industrial,0.4673699705593719,11430,24456,0.4043715846994536,74,183
+2017_2018,3.78,1736,Escuela Politécnica Superior,"Grado en Ingeniería en Diseño Industrial
+y Desarrollo del Producto",23,202,Grado en Ingeniería en Diseño Industrial y Desarrollo del Producto,0.5867914532933074,19938,33978,0.3006993006993007,43,143
+2017_2018,3.95,1204,Escuela Politécnica Superior,Grado en Ingeniería Mecánica,23,207,Grado en Ingeniería Mecánica,0.5207003089598352,15168,29130,0.22167487684729065,45,203
+2017_2018,4.11,800,Escuela Politécnica Superior,Grado en Ingeniería Química Industrial,23,209,Grado en Ingeniería Química Industrial,0.4168627450980392,6378,15300,0.2833333333333333,34,120
+2017_2018,4.05,2101,E.T.S. de Ingeniería,Grado en Ingeniería Aeroespacial,45,197,Grado en Ingeniería Aeroespacial,0.6626472349770414,24894,37567,0.16296296296296298,22,135
+2017_2018,3.88,1081,E.T.S. de Ingeniería,Grado en Ingeniería Civil,45,225,Grado en Ingeniería Civil,0.5045458895588094,7908,15673,0.2911392405063291,23,79
+2017_2018,4.03,3291,E.T.S. de Ingeniería,"Grado en Ingeniería de las Tecnologías de
+Telecomunicación",45,199,Grado en Ingeniería de las Tecnologías de Telecomunicación,0.573162583518931,23161,40410,0.34972677595628415,64,183
+2017_2018,4.07,4380,E.T.S. de Ingeniería,Grado en Ingeniería de Tecnologías Indus-triales,45,203,Grado en Ingeniería de Tecnologías Industriales,0.6320618821161473,48046,76015,0.16549295774647887,47,284
+2017_2018,3.99,1484,E.T.S. de Ingeniería,"Grado en Ingeniería Electrónica, Robótica
+y Mecatrónica (UMA-US)",45,228,"Grado en Ingeniería Electrónica, Robótica y Mecatrónica (UMA-US)",0.6695598740302635,13075,19528,0.22058823529411764,15,68
+2017_2018,3.95,1539,E.T.S. de Ingeniería,Grado en Ingeniería Química,45,208,Grado en Ingeniería Química,0.5431195643339023,10023,18454,0.35714285714285715,30,84
+2017_2018,4.23,987,E.T.S. Ingeniería Informática,Grado en Ingeniería Informática-Inge-niería de Computadores,3,204,Grado en Ingeniería Informática-Ingeniería de Computadores,0.4619321817018554,8664,18756,0.6715328467153284,92,137
+2017_2018,4.12,3851,E.T.S. Ingeniería Informática,Grado en Ingeniería Informática-Inge-niería del Software,3,205,Grado en Ingeniería Informática-Ingeniería del Software,0.6711046390680258,38712,57684,0.32926829268292684,81,246
+2017_2018,4.17,1711,E.T.S. Ingeniería Informática,Grado en Ingeniería Informática-Tecnolo-gías Informáticas,3,206,Grado en Ingeniería Informática-Tecnologías Informáticas,0.5435598948554262,17370,31956,0.581151832460733,111,191
+2017_2018,4.27,2536,Facultad de Bellas Artes,Grado en Bellas Artes,21,190,Grado en Bellas Artes,0.8694584837545126,36126,41550,0.14444444444444443,26,180
+2017_2018,4.17,705,Facultad de Bellas Artes,"Grado en Conservación y Restauración de
+Bienes Culturales",21,193,Grado en Conservación y Restauración de Bienes Culturales,0.820137299771167,10752,13110,0.27419354838709675,17,62
+2017_2018,4.34,6202,Facultad de Biología,Grado en Biología,5,153,Grado en Biología,0.7683500306685749,45096,58692,0.15,33,220
+2017_2018,4.18,4359,Facultad de CC. Económ. y Em-presariales,"Grado en Administración y Dirección de
+Empresas",1,151,Grado en Administración y Dirección de Empresas,0.5526591289782244,63348,114624,0.311284046692607,160,514
+2017_2018,4.04,1656,Facultad de CC. Económ. y Em-presariales,Grado en Economía,1,156,Grado en Economía,0.5821819914244879,21996,37782,0.3263888888888889,47,144
+2017_2018,4.05,1392,Facultad de CC. Económ. y Em-presariales,"Grado en Marketing e Investigación de
+Mercados",1,180,Grado en Marketing e Investigación de Mercados,0.6892633228840125,21108,30624,0.3106060606060606,41,132
+2017_2018,4.13,1563,Facultad de Ciencias de la Edu-cación,"Grado en Ciencias de la Actividad Física y
+del Deporte",18,154,Grado en Ciencias de la Actividad Física y del Deporte,0.892202659001078,14898,16698,0.07936507936507936,5,63
+2017_2018,4.32,2180,Facultad de Ciencias de la Edu-cación,Grado en Educación Infantil,18,194,Grado en Educación Infantil,0.9620758483033932,38560,40080,0.07142857142857142,17,238
+2017_2018,4.12,8358,Facultad de Ciencias de la Edu-cación,Grado en Educación Primaria,18,195,Grado en Educación Primaria,0.8640737724660786,113004,130780,0.13070866141732285,83,635
+2017_2018,4.2,2036,Facultad de Ciencias de la Edu-cación,Grado en Pedagogía,18,174,Grado en Pedagogía,0.911967418546366,34932,38304,0.14285714285714285,30,210
+2017_2018,4.04,1800,Facultad de Ciencias del Trabajo,Grado en Relaciones Laborales y Recur-sos Humanos,8,178,Grado en Relaciones Laborales y Recursos Humanos,0.6581993569131833,36846,55980,0.20087336244541484,46,229
+2017_2018,4.21,1823,Facultad de Comunicación,Grado en Comunicación Audiovisual,2,192,Grado en Comunicación Audiovisual,0.8522918773171554,30345,35604,0.09219858156028368,13,141
+2017_2018,4,2429,Facultad de Comunicación,Grado en Periodismo,2,210,Grado en Periodismo,0.7860552259445956,52863,67251,0.15412186379928317,43,279
+2017_2018,4.2,2003,Facultad de Comunicación,Grado en Publicidad y Relaciones Públi-cas,2,211,Grado en Publicidad y Relaciones Públicas,0.8800509646887513,29010,32964,0.13138686131386862,18,137
+2017_2018,4.2,356,Facultad de Derecho,Grado en Criminología,20,218,Grado en Criminología,0.9360254083484574,12378,13224,0.14545454545454545,8,55
+2017_2018,4.25,2711,Facultad de Derecho,Grado en Derecho,20,155,Grado en Derecho,0.7153030874282602,102450,143226,0.15717092337917485,80,509
+2017_2018,4.33,1871,Facultad de Farmacia,Grado en Óptica y Optometría,19,223,Grado en Óptica y Optometría,0.9177524429967426,13524,14736,0.16666666666666666,9,54
+2017_2018,4.74,131,Facultad de Filología,Grado en Estudios Árabes e Islámicos,16,181,Grado en Estudios Árabes e Islámicos,0.6537530266343826,3240,4956,0.5277777777777778,19,36
+2017_2018,4.07,606,Facultad de Filología,Grado en Estudios Franceses,16,182,Grado en Estudios Franceses,0.6023150062009095,8742,14514,0.4,28,70
+2017_2018,4.3,1948,Facultad de Filología,Grado en Estudios Ingleses,16,183,Grado en Estudios Ingleses,0.6702655383717537,27564,41124,0.3157894736842105,54,171
+2017_2018,4.17,95,Facultad de Filología,Grado en Filología Clásica,16,184,Grado en Filología Clásica,0.6888185654008439,3918,5688,0.6875,22,32
+2017_2018,4.19,2059,Facultad de Filología,Grado en Filología Hispánica,16,159,Grado en Filología Hispánica,0.6483471912390996,19182,29586,0.24545454545454545,27,110
+2017_2018,4.02,233,Facultad de Filología,Grado en Lengua y Literatura Alemanas,16,185,Grado en Lengua y Literatura Alemanas,0.6586084905660378,6702,10176,0.3,18,60
+2017_2018,4.47,579,Facultad de Filosofía,Grado en Filosofía,12,160,Grado en Filosofía,0.6508058326937836,10176,15636,0.45054945054945056,41,91
+2017_2018,3.93,1486,Facultad de Física,Grado en Física,6,162,Grado en Física,0.634215258155664,14814,23358,0.32673267326732675,33,101
+2017_2018,4.19,526,Facultad de Física,Grado en Ingeniería de Materiales,6,222,Grado en Ingeniería de Materiales,0.7167149758454107,5563,7762,0.1891891891891892,7,37
+2017_2018,4.07,374,Facultad de Geografía e Historia,Grado en Antropología Social y Cultural,4,188,Grado en Antropología Social y Cultural,0.6515434985968195,8358,12828,0.5,32,64
+2017_2018,3.98,739,Facultad de Geografía e Historia,Grado en Geografia y Gestión del Territo-rio,4,164,Grado en Geografia y Gestión del Territorio,0.6556354916067146,8202,12510,0.1935483870967742,12,62
+2017_2018,4.19,1703,Facultad de Geografía e Historia,Grado en Historia,4,166,Grado en Historia,0.65044121833191,27420,42156,0.27717391304347827,51,184
+2017_2018,4.21,1825,Facultad de Geografía e Historia,Grado en Historia del Arte,4,167,Grado en Historia del Arte,0.6196477376252657,24486,39516,0.43548387096774194,81,186
+2017_2018,4.2,886,Facultad de Matemáticas,Grado en Matemáticas,17,171,Grado en Matemáticas,0.6471074380165289,18792,29040,0.3533834586466165,47,133
+2017_2018,4.22,1230,Facultad de Medicina,Grado en Biomedicina Básica y Experi-mental,14,217,Grado en Biomedicina Básica y Experimental,0.9087639850825786,10234,11262,0.2,10,50
+2017_2018,4.28,5407,Facultad de Psicología,Grado en Psicología,13,176,Grado en Psicología,0.8580718122702855,54630,63666,0.10452961672473868,30,287
+2017_2018,4.15,3265,Facultad de Química,Grado en Química,22,177,Grado en Química,0.6092341910495839,23830,39115,0.22448979591836735,33,147
+2017_2018,4.2,2905,Facultad de Turismo y Finanzas,Grado en Finanzas y Contabilidad,7,161,Grado en Finanzas y Contabilidad,0.5098748075249381,45696,89622,0.4477611940298507,210,469
+2017_2018,4.17,2434,Facultad de Turismo y Finanzas,Grado en Turismo,7,179,Grado en Turismo,0.6484934243382721,46746,72084,0.27976190476190477,94,336
+2017_2018,4.37,3029,"Facultad Enfermería, Fisioter. y
+Podolog",Grado en Enfermería,11,157,Grado en Enfermería,0.8592270854215391,46290,53874,0.19246861924686193,46,239
+2017_2018,4.41,2452,"Facultad Enfermería, Fisioter. y
+Podolog",Grado en Fisioterapia,11,163,Grado en Fisioterapia,0.856480837851615,18482,21579,0.2079207920792079,21,101
+2017_2018,4.4,939,"Facultad Enfermería, Fisioter. y
+Podolog",Grado en Podología,11,175,Grado en Podología,0.7673003802281368,12108,15780,0.2058823529411765,14,68
+2018_2019,4.12,507,Escuela Politécnica Superior,Grado en Ingeniería Eléctrica,23,200,Grado en Ingeniería Eléctrica,0.5054191550541915,6855,13563,0.31496062992125984,40,127
+2018_2019,4.03,1212,Escuela Politécnica Superior,Grado en Ingeniería Electrónica Indus-trial,23,201,Grado en Ingeniería Electrónica Industrial,0.4818159628996827,11844,24582,0.35555555555555557,64,180
+2018_2019,4.03,1776,Escuela Politécnica Superior,Grado en Ingeniería en Diseño Indus-trial y Desarrollo del Producto,23,202,Grado en Ingeniería en Diseño Industrial y Desarrollo del Producto,0.601842012043925,20388,33876,0.2597402597402597,40,154
+2018_2019,3.94,1452,Escuela Politécnica Superior,Grado en Ingeniería Mecánica,23,207,Grado en Ingeniería Mecánica,0.5266001662510391,15204,28872,0.30386740331491713,55,181
+2018_2019,4.02,1058,Escuela Politécnica Superior,Grado en Ingeniería Química Industrial,23,209,Grado en Ingeniería Química Industrial,0.4234158623583718,6054,14298,0.3185840707964602,36,113
+2018_2019,4.08,2098,E.T.S. de Ingeniería,Grado en Ingeniería Aeroespacial,45,197,Grado en Ingeniería Aeroespacial,0.6469816272965879,24403,37719,0.15503875968992248,20,129
+2018_2019,3.88,811,E.T.S. de Ingeniería,Grado en Ingeniería Civil,45,225,Grado en Ingeniería Civil,0.5182636851158555,7683,14824,0.3611111111111111,26,72
+2018_2019,4.16,2514,E.T.S. de Ingeniería,"Grado en Ingeniería de las Tecnologías
+de Telecomunicación",45,199,Grado en Ingeniería de las Tecnologías de Telecomunicación,0.5184111563773112,19851,38292,0.3986928104575164,61,153
+2018_2019,4.09,3898,E.T.S. de Ingeniería,"Grado en Ingeniería de Tecnologías
+Industriales",45,203,Grado en Ingeniería de Tecnologías Industriales,0.6354095184273201,47223,74319,0.17054263565891473,44,258
+2018_2019,3.96,1591,E.T.S. de Ingeniería,"Grado en Ingeniería Electrónica, Robó-tica y Mecatrónica (UMA-US)",45,228,"Grado en Ingeniería Electrónica, Robótica y Mecatrónica (UMA-US)",0.650632322135154,12579,19333,0.16666666666666666,11,66
+2018_2019,4.02,1207,E.T.S. de Ingeniería,Grado en Ingeniería Química,45,208,Grado en Ingeniería Química,0.5224958663301714,9006,17236,0.391304347826087,27,69
+2018_2019,4.08,1186,E.T.S. Ingeniería Informá-tica,Grado en Ingeniería Informática-Inge-niería de Computadores,3,204,Grado en Ingeniería Informática-Ingeniería de Computadores,0.47980855518994914,9624,20058,0.6277372262773723,86,137
+2018_2019,4.11,4145,E.T.S. Ingeniería Informá-tica,Grado en Ingeniería Informática-Inge-niería del Software,3,205,Grado en Ingeniería Informática-Ingeniería del Software,0.6741922536624524,40314,59796,0.35271317829457366,91,258
+2018_2019,4.16,1859,E.T.S. Ingeniería Informá-tica,Grado en Ingeniería Informática-Tecno-logías Informáticas,3,206,Grado en Ingeniería Informática-Tecnologías Informáticas,0.5311982330204307,17316,32598,0.56,98,175
+2018_2019,4.29,2080,Facultad de Bellas Artes,Grado en Bellas Artes,21,190,Grado en Bellas Artes,0.8467443844185385,35736,42204,0.1891891891891892,35,185
+2018_2019,4.08,881,Facultad de Bellas Artes,"Grado en Conservación y Restauración
+de Bienes Culturales",21,193,Grado en Conservación y Restauración de Bienes Culturales,0.8323900740095778,11472,13782,0.2318840579710145,16,69
+2018_2019,4.4,5294,Facultad de Biología,Grado en Biología,5,153,Grado en Biología,0.7514696276943175,41418,55116,0.16517857142857142,37,224
+2018_2019,4.16,4784,"Facultad de CC. Económ. y
+Empresariales","Grado en Administración y Dirección
+de Empresas",1,151,Grado en Administración y Dirección de Empresas,0.5704945692291469,64920,113796,0.3652694610778443,183,501
+2018_2019,4.04,1621,"Facultad de CC. Económ. y
+Empresariales",Grado en Economía,1,156,Grado en Economía,0.5543583145706015,20682,37308,0.3333333333333333,50,150
+2018_2019,4.06,1402,"Facultad de CC. Económ. y
+Empresariales","Grado en Marketing e Investigación de
+Mercados",1,180,Grado en Marketing e Investigación de Mercados,0.7105729474305966,21654,30474,0.30708661417322836,39,127
+2018_2019,4.16,1550,"Facultad de Ciencias de la
+Educación",Grado en Ciencias de la Actividad Fí-sica y del Deporte,18,154,Grado en Ciencias de la Actividad Física y del Deporte,0.8574429771908764,17142,19992,0.10344827586206896,6,58
+2018_2019,4.14,2343,"Facultad de Ciencias de la
+Educación",Grado en Educación Infantil,18,194,Grado en Educación Infantil,0.9654681905135626,39366,40774,0.05681818181818181,10,176
+2018_2019,4.19,7539,"Facultad de Ciencias de la
+Educación",Grado en Educación Primaria,18,195,Grado en Educación Primaria,0.8598462808094407,113047,131473,0.13333333333333333,76,570
+2018_2019,4.21,2139,"Facultad de Ciencias de la
+Educación",Grado en Pedagogía,18,174,Grado en Pedagogía,0.9046534331272372,33360,36876,0.13142857142857142,23,175
+2018_2019,4.13,1578,"Facultad de Ciencias del
+Trabajo",Grado en Relaciones Laborales y Re-cursos Humanos,8,178,Grado en Relaciones Laborales y Recursos Humanos,0.6305023026668095,35322,56022,0.2556053811659193,57,223
+2018_2019,4.21,1733,Facultad de Comunicación,Grado en Comunicación Audiovisual,2,192,Grado en Comunicación Audiovisual,0.8760438840674636,32100,36642,0.1,15,150
+2018_2019,4.14,2045,Facultad de Comunicación,Grado en Periodismo,2,210,Grado en Periodismo,0.7971033234191129,55476,69597,0.12318840579710146,34,276
+2018_2019,4.07,2388,Facultad de Comunicación,Grado en Publicidad y Relaciones Pú-blicas,2,211,Grado en Publicidad y Relaciones Públicas,0.8595860375372741,29403,34206,0.14492753623188406,20,138
+2018_2019,4.5,306,Facultad de Derecho,Grado en Criminología,20,218,Grado en Criminología,0.9549128030625266,13470,14106,0.21311475409836064,13,61
+2018_2019,4.35,2644,Facultad de Derecho,Grado en Derecho,20,155,Grado en Derecho,0.7078918133652368,99405,140424,0.11023622047244094,56,508
+2018_2019,4.33,3961,"Facultad de Enfermería,
+Fisioterapia y Podología",Grado en Enfermería,11,157,Grado en Enfermería,0.8521706385496799,47523,55767,0.204,51,250
+2018_2019,4.47,2085,"Facultad de Enfermería,
+Fisioterapia y Podología",Grado en Fisioterapia,11,163,Grado en Fisioterapia,0.865974025974026,18337,21175,0.24778761061946905,28,113
+2018_2019,4.25,900,"Facultad de Enfermería,
+Fisioterapia y Podología",Grado en Podología,11,175,Grado en Podología,0.7864854058376649,11802,15006,0.25316455696202533,20,79
+2018_2019,4.32,1821,Facultad de Farmacia,Grado en Óptica y Optometría,19,223,Grado en Óptica y Optometría,0.9250697489039458,13926,15054,0.11864406779661016,7,59
+2018_2019,4.48,138,Facultad de Filología,Grado en Estudios Árabes e Islámicos,16,181,Grado en Estudios Árabes e Islámicos,0.6290726817042607,3012,4788,0.5517241379310345,16,29
+2018_2019,4.23,567,Facultad de Filología,Grado en Estudios Franceses,16,182,Grado en Estudios Franceses,0.5961376994122586,8520,14292,0.4477611940298507,30,67
+2018_2019,4.27,2133,Facultad de Filología,Grado en Estudios Ingleses,16,183,Grado en Estudios Ingleses,0.6920451172454735,27978,40428,0.33714285714285713,59,175
+2018_2019,4.45,125,Facultad de Filología,Grado en Filología Clásica,16,184,Grado en Filología Clásica,0.6503006012024048,3894,5988,0.5405405405405406,20,37
+2018_2019,4.34,1789,Facultad de Filología,Grado en Filología Hispánica,16,159,Grado en Filología Hispánica,0.592934564431955,17724,29892,0.35833333333333334,43,120
+2018_2019,4.03,291,Facultad de Filología,Grado en Lengua y Literatura Alemanas,16,185,Grado en Lengua y Literatura Alemanas,0.6299711815561959,6558,10410,0.3157894736842105,18,57
+2018_2019,4.38,566,Facultad de Filosofía,Grado en Filosofía,12,160,Grado en Filosofía,0.7112647417649451,10494,14754,0.35,28,80
+2018_2019,4.04,1113,Facultad de Física,Grado en Física,6,162,Grado en Física,0.6623762376237624,16056,24240,0.29357798165137616,32,109
+2018_2019,4.26,495,Facultad de Física,Grado en Ingeniería de Materiales,6,222,Grado en Ingeniería de Materiales,0.75344105326152,5665,7519,0.21739130434782608,10,46
+2018_2019,4.29,276,"Facultad de Geografía e
+Historia",Grado en Antropología Social y Cultu-ral,4,188,Grado en Antropología Social y Cultural,0.6546463245492372,8496,12978,0.3548387096774194,22,62
+2018_2019,4.25,2260,"Facultad de Geografía e
+Historia",Grado en Historia,4,166,Grado en Historia,0.6462839711591791,27966,43272,0.3351063829787234,63,188
+2018_2019,4.28,1725,"Facultad de Geografía e
+Historia",Grado en Historia del Arte,4,167,Grado en Historia del Arte,0.6303666562206205,24138,38292,0.42934782608695654,79,184
+2018_2019,4.11,914,Facultad de Matemáticas,Grado en Matemáticas,17,171,Grado en Matemáticas,0.6341897233201581,19254,30360,0.2647058823529412,36,136
+2018_2019,4.2,1091,Facultad de Medicina,Grado en Biomedicina Básica y Experi-mental,14,217,Grado en Biomedicina Básica y Experimental,0.904670994018073,10662,11785,0.24489795918367344,12,49
+2018_2019,4.33,5308,Facultad de Psicología,Grado en Psicología,13,176,Grado en Psicología,0.858826884684856,54204,63114,0.13011152416356878,35,269
+2018_2019,4.24,2343,Facultad de Química,Grado en Química,22,177,Grado en Química,0.6256475192816853,24457,39091,0.2662337662337662,41,154
+2018_2019,4.21,3235,Facultad de Turismo y Fi-nanzas,Grado en Finanzas y Contabilidad,7,161,Grado en Finanzas y Contabilidad,0.5070960305453498,42234,83286,0.4509803921568627,207,459
+2018_2019,4.21,2689,Facultad de Turismo y Fi-nanzas,Grado en Turismo,7,179,Grado en Turismo,0.6513664101883789,44190,67842,0.2588996763754045,80,309
+2019_2020,4.06,466,Escuela Politécnica Superior,Grado en Ingeniería Eléctrica,23,200,Grado en Ingeniería Eléctrica,0.5666967102298333,7545,13314,0.36666666666666664,33,90
+2019_2020,3.92,807,Escuela Politécnica Superior,Grado en Ingeniería Electrónica Industrial,23,201,Grado en Ingeniería Electrónica Industrial,0.543319019954534,12906,23754,0.4496124031007752,58,129
+2019_2020,4.03,1166,Escuela Politécnica Superior,"Grado en Ingeniería en Diseño Industrial y
+Desarrollo del Producto",23,202,Grado en Ingeniería en Diseño Industrial y Desarrollo del Producto,0.6975561006632143,23034,33021,0.2307692307692308,33,143
+2019_2020,3.81,1083,Escuela Politécnica Superior,Grado en Ingeniería Mecánica,23,207,Grado en Ingeniería Mecánica,0.5986980260394792,17106,28572,0.2411764705882353,41,170
+2019_2020,4.08,838,Escuela Politécnica Superior,Grado en Ingeniería Química Industrial,23,209,Grado en Ingeniería Química Industrial,0.5340715502555367,7524,14088,0.47619047619047616,40,84
+2019_2020,4.13,1281,E.T.S. de Ingeniería,Grado en Ingeniería Aeroespacial,45,197,Grado en Ingeniería Aeroespacial,0.7080030840400925,34435,48637,0.1796875,23,128
+2019_2020,3.88,453,E.T.S. de Ingeniería,Grado en Ingeniería Civil,45,225,Grado en Ingeniería Civil,0.5960849844831702,11236,18850,0.375,27,72
+2019_2020,4.14,1756,E.T.S. de Ingeniería,"Grado en Ingeniería de las Tecnologías de
+Telecomunicación",45,199,Grado en Ingeniería de las Tecnologías de Telecomunicación,0.5612576797976148,23295,41505,0.2765957446808511,39,141
+2019_2020,4.11,2520,E.T.S. de Ingeniería,"Grado en Ingeniería de Tecnologías
+Industriales",45,203,Grado en Ingeniería de Tecnologías Industriales,0.6700861048576137,86616,129261,0.14615384615384616,38,260
+2019_2020,4.07,853,E.T.S. de Ingeniería,"Grado en Ingeniería Electrónica, Robótica y
+Mecatrónica (UMA-US)",45,228,"Grado en Ingeniería Electrónica, Robótica y Mecatrónica (UMA-US)",0.7300920050761421,13807,18912,0.15492957746478872,11,71
+2019_2020,3.86,397,E.T.S. de Ingeniería,Grado en Ingeniería Química,45,208,Grado en Ingeniería Química,0.6303877517057747,11364,18027,0.31746031746031744,20,63
+2019_2020,3.89,793,E.T.S. Ingeniería Informática,"Grado en Ingeniería Informática-Ingeniería de
+Computadores",3,204,Grado en Ingeniería Informática-Ingeniería de Computadores,0.5455844527007716,11454,20994,0.5833333333333334,63,108
+2019_2020,4.05,2918,E.T.S. Ingeniería Informática,"Grado en Ingeniería Informática-Ingeniería
+del Software",3,205,Grado en Ingeniería Informática-Ingeniería del Software,0.7719072164948454,46722,60528,0.2897959183673469,71,245
+2019_2020,4.03,1307,E.T.S. Ingeniería Informática,"Grado en Ingeniería Informática-Tecnologías
+Informáticas",3,206,Grado en Ingeniería Informática-Tecnologías Informáticas,0.6098714069591528,19350,31728,0.5304878048780488,87,164
+2019_2020,4.24,1474,Facultad de Bellas Artes,Grado en Bellas Artes,21,190,Grado en Bellas Artes,0.8724482193413798,35130,40266,0.17613636363636365,31,176
+2019_2020,4.16,504,Facultad de Bellas Artes,"Grado en Conservación y Restauración de
+Bienes Culturales",21,193,Grado en Conservación y Restauración de Bienes Culturales,0.8506224066390041,11070,13014,0.15254237288135594,9,59
+2019_2020,4.39,3550,Facultad de Biología,Grado en Biología,5,153,Grado en Biología,0.8025889967637541,43152,53766,0.17452830188679244,37,212
+2019_2020,4.19,2485,"Facultad de CC. Económ. y
+Empresariales","Grado en Administración y Dirección de
+Empresas",1,151,Grado en Administración y Dirección de Empresas,0.6848913704461275,74334,108534,0.37067209775967414,182,491
+2019_2020,3.83,1103,"Facultad de CC. Económ. y
+Empresariales",Grado en Economía,1,156,Grado en Economía,0.6781259993604093,25446,37524,0.3170731707317073,52,164
+2019_2020,3.81,836,"Facultad de CC. Económ. y
+Empresariales","Grado en Marketing e Investigación de
+Mercados",1,180,Grado en Marketing e Investigación de Mercados,0.8114419147694104,25020,30834,0.34615384615384615,45,130
+2019_2020,4.21,1257,"Facultad de Ciencias de la
+Educación","Grado en Ciencias de la Actividad Física y del
+Deporte",18,154,Grado en Ciencias de la Actividad Física y del Deporte,0.9125805547772484,19542,21414,0.10294117647058824,7,68
+2019_2020,4.35,2305,"Facultad de Ciencias de la
+Educación",Grado en Educación Infantil,18,194,Grado en Educación Infantil,0.9812732202028316,39090,39836,0.08241758241758242,15,182
+2019_2020,4.19,5579,"Facultad de Ciencias de la
+Educación",Grado en Educación Primaria,18,195,Grado en Educación Primaria,0.9361361530036229,122221,130559,0.10805860805860806,59,546
+2019_2020,4.18,1490,"Facultad de Ciencias de la
+Educación",Grado en Pedagogía,18,174,Grado en Pedagogía,0.9296490930666216,32904,35394,0.1,15,150
+2019_2020,3.97,1104,Facultad de Ciencias del Trabajo,"Grado en Relaciones Laborales y Recursos
+Humanos",8,178,Grado en Relaciones Laborales y Recursos Humanos,0.7413887370147622,40680,54870,0.2318181818181818,51,220
+2019_2020,3.98,1590,Facultad de Comunicación,Grado en Comunicación Audiovisual,2,192,Grado en Comunicación Audiovisual,0.9130215343203232,32562,35664,0.10759493670886076,17,158
+2019_2020,3.91,2347,Facultad de Comunicación,Grado en Periodismo,2,210,Grado en Periodismo,0.8570823808314283,60738,70866,0.1696113074204947,48,283
+2019_2020,4.05,1547,Facultad de Comunicación,Grado en Publicidad y Relaciones Públicas,2,211,Grado en Publicidad y Relaciones Públicas,0.905394631942599,30663,33867,0.10071942446043164,14,139
+2019_2020,4.35,512,Facultad de Derecho,Grado en Criminología,20,218,Grado en Criminología,0.9571068124474348,13656,14268,0.06779661016949153,4,59
+2019_2020,4.09,2599,Facultad de Derecho,Grado en Derecho,20,155,Grado en Derecho,0.8145335021209497,110028,135081,0.1611785095320624,93,577
+2019_2020,4.41,1241,Facultad de Farmacia,Grado en Óptica y Optometría,19,223,Grado en Óptica y Optometría,0.9076539101497504,13092,14424,0.1,6,60
+2019_2020,4.35,185,Facultad de Filología,Grado en Estudios Árabes e Islámicos,16,181,Grado en Estudios Árabes e Islámicos,0.7734177215189874,3666,4740,0.4545454545454546,10,22
+2019_2020,4.07,560,Facultad de Filología,Grado en Estudios Franceses,16,182,Grado en Estudios Franceses,0.7344841759145089,10722,14598,0.4918032786885246,30,61
+2019_2020,3.99,1527,Facultad de Filología,Grado en Estudios Ingleses,16,183,Grado en Estudios Ingleses,0.7997533528595653,31128,38922,0.1839080459770115,32,174
+2019_2020,4.11,93,Facultad de Filología,Grado en Filología Clásica,16,184,Grado en Filología Clásica,0.7214137214137214,4164,5772,0.4883720930232558,21,43
+2019_2020,4.1,1258,Facultad de Filología,Grado en Filología Hispánica,16,159,Grado en Filología Hispánica,0.7291242362525459,21480,29460,0.3028169014084507,43,142
+2019_2020,3.95,276,Facultad de Filología,Grado en Lengua y Literatura Alemanas,16,185,Grado en Lengua y Literatura Alemanas,0.7568013190436933,5508,7278,0.26666666666666666,12,45
+2019_2020,4.26,530,Facultad de Filosofía,Grado en Filosofía,12,160,Grado en Filosofía,0.7766837337534462,11832,15234,0.3013698630136986,22,73
+2019_2020,4.07,979,Facultad de Física,Grado en Física,6,162,Grado en Física,0.6805555555555556,15582,22896,0.19658119658119655,23,117
+2019_2020,4.4,375,Facultad de Física,Grado en Ingeniería de Materiales,6,222,Grado en Ingeniería de Materiales,0.6866666666666666,5253,7650,0.17391304347826086,8,46
+2019_2020,4.24,368,Facultad de Geografía e Historia,Grado en Antropología Social y Cultural,4,188,Grado en Antropología Social y Cultural,0.6922707633221316,8652,12498,0.43103448275862066,25,58
+2019_2020,4.16,1677,Facultad de Geografía e Historia,Grado en Historia,4,166,Grado en Historia,0.7391304347826086,33150,44850,0.2058823529411765,35,170
+2019_2020,4.09,1550,Facultad de Geografía e Historia,Grado en Historia del Arte,4,167,Grado en Historia del Arte,0.7186009538950715,27120,37740,0.358695652173913,66,184
+2019_2020,4.02,754,Facultad de Matemáticas,Grado en Matemáticas,17,171,Grado en Matemáticas,0.7228385279098433,24630,34074,0.20945945945945943,31,148
+2019_2020,4.08,1347,Facultad de Medicina,Grado en Biomedicina Básica y Experimental,14,217,Grado en Biomedicina Básica y Experimental,0.926428756141712,10747,11601,0.16666666666666666,8,48
+2019_2020,4.28,3501,Facultad de Psicología,Grado en Psicología,13,176,Grado en Psicología,0.8914684786711967,56676,63576,0.1412639405204461,38,269
+2019_2020,4.15,1695,Facultad de Química,Grado en Química,22,177,Grado en Química,0.7099938687921521,26055,36697,0.38311688311688313,59,154
+2019_2020,4.19,1992,Facultad de Turismo y Finanzas,Grado en Finanzas y Contabilidad,7,161,Grado en Finanzas y Contabilidad,0.5617323337055352,42258,75228,0.4731934731934732,203,429
+2019_2020,4.27,2339,Facultad de Turismo y Finanzas,Grado en Turismo,7,179,Grado en Turismo,0.720328917313842,47304,65670,0.26936026936026936,80,297
+2019_2020,4.29,2704,"Facultad Enfermería, Fisioter. y
+Podolog",Grado en Enfermería,11,157,Grado en Enfermería,0.801463811330984,44349,55335,0.2145748987854251,53,247
+2019_2020,4.39,1821,"Facultad Enfermería, Fisioter. y
+Podolog",Grado en Fisioterapia,11,163,Grado en Fisioterapia,0.905859842143028,18937,20905,0.3391304347826087,39,115
+2019_2020,4.29,2704,"Facultad Enfermería, Fisioter. y
+Podolog",Grado en Enfermería,11,157,Grado en Enfermería,0.801463811330984,44349,55335,0.2145748987854251,53,247
+2020_2021,3.56,107,Escuela Politécnica Superior,Grado en Ingeniería Eléctrica,23,200,Grado en Ingeniería Eléctrica,0.44123192960402263,6318,14319,0.4929577464788733,35,71
+2020_2021,3.51,122,Escuela Politécnica Superior,Grado en Ingeniería Electrónica Industrial,23,201,Grado en Ingeniería Electrónica Industrial,0.4271981242672919,10932,25590,0.5925925925925926,64,108
+2020_2021,4.11,312,Escuela Politécnica Superior,"Grado en Ingeniería en Diseño Industrial y
+Desarrollo del Producto",23,202,Grado en Ingeniería en Diseño Industrial y Desarrollo del Producto,0.6534508076358296,21360,32688,0.21929824561403508,25,114
+2020_2021,3.65,282,Escuela Politécnica Superior,Grado en Ingeniería Mecánica,23,207,Grado en Ingeniería Mecánica,0.5050359712230216,14742,29190,0.39166666666666666,47,120
+2020_2021,3.85,220,Escuela Politécnica Superior,Grado en Ingeniería Química Industrial,23,209,Grado en Ingeniería Química Industrial,0.47758761206193967,7032,14724,0.4307692307692308,28,65
+2020_2021,4.11,478,E.T.S. de Ingeniería,Grado en Ingeniería Aeroespacial,45,197,Grado en Ingeniería Aeroespacial,0.6593835506196685,24580,37278,0.15503875968992248,20,129
+2020_2021,3.65,148,E.T.S. de Ingeniería,Grado en Ingeniería Civil,45,225,Grado en Ingeniería Civil,0.4616365568544102,6516,14115,0.5294117647058824,36,68
+2020_2021,4.01,390,E.T.S. de Ingeniería,"Grado en Ingeniería de las Tecnologías de
+Telecomunicación",45,199,Grado en Ingeniería de las Tecnologías de Telecomunicación,0.5409408746741694,19611,36253,0.246031746031746,31,126
+2020_2021,4.05,1.015,E.T.S. de Ingeniería,Grado en Ingeniería de Tecnologías Industriales,45,203,Grado en Ingeniería de Tecnologías Industriales,0.6368344608798685,49984,78489,0.23193916349809887,61,263
+2020_2021,3.87,312,E.T.S. de Ingeniería,"Grado en Ingeniería Electrónica, Robótica y
+Mecatrónica (UMA-US)",45,228,"Grado en Ingeniería Electrónica, Robótica y Mecatrónica (UMA-US)",0.6850683071023408,12862,18775,0.15384615384615383,10,65
+2020_2021,4.23,85,E.T.S. de Ingeniería,Grado en Ingeniería Química,45,208,Grado en Ingeniería Química,0.5165913244205059,8056,15595,0.25,15,60
+2020_2021,4.16,668,Facultad de Bellas Artes,Grado en Bellas Artes,21,190,Grado en Bellas Artes,0.8774457758228424,34710,39558,0.17297297297297298,32,185
+2020_2021,4.03,445,Facultad de Bellas Artes,"Grado en Conservación y Restauración de Bienes
+Culturales",21,193,Grado en Conservación y Restauración de Bienes Culturales,0.8662900188323918,11040,12744,0.3114754098360656,19,61
+2020_2021,4.3,819,Facultad de Biología,Grado en Biología,5,153,Grado en Biología,0.7578363698087587,40182,53022,0.19597989949748745,39,199
+2020_2021,3.93,839,"Facultad de Ciencias Económicas y
+Empresariales",Grado en Administración y Dirección de Empresas,1,151,Grado en Administración y Dirección de Empresas,0.5790202342917998,65244,112680,0.3874239350912778,191,493
+2020_2021,3.82,332,"Facultad de Ciencias Económicas y
+Empresariales",Grado en Economía,1,156,Grado en Economía,0.6218247407184728,24822,39918,0.391025641025641,61,156
+2020_2021,3.8,415,"Facultad de Ciencias Económicas y
+Empresariales",Grado en Marketing e Investigación de Mercados,1,180,Grado en Marketing e Investigación de Mercados,0.7586206896551724,23496,30972,0.2366412213740458,31,131
+2020_2021,4.12,451,"Facultad de Ciencias de la
+Educación","Grado en Ciencias de la Actividad Física y del
+Deporte",18,154,Grado en Ciencias de la Actividad Física y del Deporte,0.8751545117428925,21240,24270,0.07894736842105263,6,76
+2020_2021,4.13,1.153,"Facultad de Ciencias de la
+Educación",Grado en Educación Infantil,18,194,Grado en Educación Infantil,0.9823578554228708,39980,40698,0.02717391304347826,5,184
+2020_2021,4.1,3.083,"Facultad de Ciencias de la
+Educación",Grado en Educación Primaria,18,195,Grado en Educación Primaria,0.9140592864781858,116665,127634,0.0703125,36,512
+2020_2021,4.04,568,"Facultad de Ciencias de la
+Educación",Grado en Pedagogía,18,174,Grado en Pedagogía,0.9294178258629572,32472,34938,0.15384615384615383,24,156
+2020_2021,4.1,622,Facultad de Ciencias del Trabajo,"Grado en Relaciones Laborales y Recursos
+Humanos",8,178,Grado en Relaciones Laborales y Recursos Humanos,0.7000730003128585,40278,57534,0.22321428571428573,50,224
+2020_2021,4.09,1.050,Facultad de Comunicación,Grado en Comunicación Audiovisual,2,192,Grado en Comunicación Audiovisual,0.916652256614214,31806,34698,0.12337662337662338,19,154
+2020_2021,3.74,1.134,Facultad de Comunicación,Grado en Periodismo,2,210,Grado en Periodismo,0.8073489903804489,55896,69234,0.125,35,280
+2020_2021,4.02,612,Facultad de Comunicación,Grado en Publicidad y Relaciones Públicas,2,211,Grado en Publicidad y Relaciones Públicas,0.9016773733047824,30318,33624,0.11188811188811187,16,143
+2020_2021,4.3,219,Facultad de Derecho,Grado en Criminología,20,218,Grado en Criminología,0.9513513513513514,13728,14430,0.12903225806451613,8,62
+2020_2021,4.11,1.078,Facultad de Derecho,Grado en Derecho,20,155,Grado en Derecho,0.7265823348625896,97875,134706,0.14414414414414414,80,555
+2020_2021,4.49,227,Facultad de Farmacia,Grado en Óptica y Optometría,19,223,Grado en Óptica y Optometría,0.9087779690189328,12672,13944,0.1129032258064516,7,62
+2020_2021,4.16,86,Facultad de Filología,Grado en Estudios Árabes e Islámicos,16,181,Grado en Estudios Árabes e Islámicos,0.7008426966292135,2994,4272,0.25,6,24
+2020_2021,4.2,417,Facultad de Filología,Grado en Estudios Franceses,16,182,Grado en Estudios Franceses,0.676731078904992,10086,14904,0.3661971830985915,26,71
+2020_2021,4.18,1.379,Facultad de Filología,Grado en Estudios Ingleses,16,183,Grado en Estudios Ingleses,0.7104820198928845,27858,39210,0.2585034013605442,38,147
+2020_2021,4.36,54,Facultad de Filología,Grado en Filología Clásica,16,184,Grado en Filología Clásica,0.6485998193315267,4308,6642,0.5348837209302325,23,43
+2020_2021,4.22,606,Facultad de Filología,Grado en Filología Hispánica,16,159,Grado en Filología Hispánica,0.6052784785561809,18714,30918,0.3828125,49,128
+2020_2021,4.14,188,Facultad de Filología,Grado en Lengua y Literatura Alemanas,16,185,Grado en Lengua y Literatura Alemanas,0.7109458023379384,4014,5646,0.40816326530612246,20,49
+2020_2021,4.38,396,Facultad de Filosofía,Grado en Filosofía,12,160,Grado en Filosofía,0.7273726639794796,11910,16374,0.22388059701492535,15,67
+2020_2021,3.88,231,Facultad de Física,Grado en Física,6,162,Grado en Física,0.6192232055063913,15114,24408,0.32727272727272727,36,110
+2020_2021,4.04,40,Facultad de Física,Grado en Ingeniería de Materiales,6,222,Grado en Ingeniería de Materiales,0.533609489738279,4251,7966,0.175,7,40
+2020_2021,4.15,160,Facultad de Geografía e Historia,Grado en Antropología Social y Cultural,4,188,Grado en Antropología Social y Cultural,0.6462128475551294,8088,12516,0.31746031746031744,20,63
+2020_2021,4.07,731,Facultad de Geografía e Historia,Grado en Historia,4,166,Grado en Historia,0.6691801480669043,29286,43764,0.30357142857142855,51,168
+2020_2021,4.07,630,Facultad de Geografía e Historia,Grado en Historia del Arte,4,167,Grado en Historia del Arte,0.6430538555691554,25218,39216,0.41040462427745666,71,173
+2020_2021,4.03,486,Facultad de Matemáticas,Grado en Matemáticas,17,171,Grado en Matemáticas,0.6278841433480609,23022,36666,0.2413793103448276,35,145
+2020_2021,4.02,383,Facultad de Medicina,Grado en Biomedicina Básica y Experimental,14,217,Grado en Biomedicina Básica y Experimental,0.9166001596169194,10336,11277,0.1,5,50
+2020_2021,4.45,1.578,Facultad de Psicología,Grado en Psicología,13,176,Grado en Psicología,0.8864612853094432,58182,65634,0.13307984790874525,35,263
+2020_2021,3.88,294,Facultad de Química,Grado en Química,22,177,Grado en Química,0.5650461538461539,20659,36562,0.2866666666666667,43,150
+2020_2021,4.08,623,Facultad de Turismo y Finanzas,Grado en Finanzas y Contabilidad,7,161,Grado en Finanzas y Contabilidad,0.4859290054365206,36468,75048,0.5121359223300971,211,412
+2020_2021,4.32,601,Facultad de Turismo y Finanzas,Grado en Turismo,7,179,Grado en Turismo,0.6821078664510606,43026,63078,0.32142857142857145,90,280
+2020_2021,4.3,942,"Facultad Enfermería, Fisioterapia y
+Podología",Grado en Enfermería,11,157,Grado en Enfermería,0.8990805957309532,50166,55797,0.2550607287449393,63,247
+2020_2021,4.4,533,"Facultad Enfermería, Fisioterapia y
+Podología",Grado en Fisioterapia,11,163,Grado en Fisioterapia,0.8882933849436753,17900,20151,0.25,25,100
+2020_2021,4.43,285,"Facultad Enfermería, Fisioterapia y
+Podología",Grado en Podología,11,175,Grado en Podología,0.8191318327974276,12228,14928,0.21428571428571427,15,70
+2021_2022,4.66,127,Facultad de Filología,Grado en Estudios Árabes e Islámicos,16,181,Grado en Estudios Árabes e Islámicos,0.5785953177257525,2076,3588,0.3333333333333333,6,18
+2021_2022,4.63,693,"Facultad Enfermería, Fisioterapia y
+Podología",Grado en Podología,11,175,Grado en Podología,0.78340825500613,11502,14682,0.32857142857142857,23,70
+2021_2022,4.6,1925,"Facultad Enfermería Fisioterapia y
+Podología",Grado en Fisioterapia,11,163,Grado en Fisioterapia,0.862248811167357,16863,19557,0.2,24,120
+2021_2022,4.58,4499,Facultad de Biología,Grado en Biología,5,153,Grado en Biología,0.7305172010297215,37458,51276,0.0845771144278607,17,201
+2021_2022,4.51,206,Facultad de Filología,Grado en Lengua y Literatura Alemanas,16,185,Grado en Lengua y Literatura Alemanas,0.6253196930946292,2934,4692,0.32432432432432434,12,37
+2021_2022,4.45,1277,Facultad de Geografía e Historia,Grado en Historia del Arte,4,167,Grado en Historia del Arte,0.5954394442766536,23658,39732,0.3647058823529411,62,170
+2021_2022,4.44,464,Facultad de Derecho,Grado en Criminología,20,218,Grado en Criminología,0.9376316898440792,13350,14238,0.08333333333333333,5,60
+2021_2022,4.44,1357,Facultad de Farmacia,Grado en Óptica y Optometría,19,223,Grado en Óptica y Optometría,0.8614970865082923,11532,13386,0.1,6,60
+2021_2022,4.44,676,Facultad de Filosofía,Grado en Filosofía,12,160,Grado en Filosofía,0.7303578015492438,11880,16266,0.4153846153846154,27,65
+2021_2022,4.44,2577,"Facultad Enfermería, Fisioterapia y
+Podología",Grado en Enfermería,11,157,Grado en Enfermería,0.8797112219980889,49716,56514,0.17716535433070865,45,254
+2021_2022,4.42,3779,Facultad de Psicología,Grado en Psicología,13,176,Grado en Psicología,0.8557292148339961,55518,64878,0.14232209737827714,38,267
+2021_2022,4.41,1996,"Facultad de Ciencias de la
+Educación",Grado en Educación Infantil,18,194,Grado en Educación Infantil,0.9772371255140004,39926,40856,0.04918032786885246,9,183
+2021_2022,4.4,2061,Facultad de Derecho,Grado en Derecho,20,155,Grado en Derecho,0.674574852409904,91869,136188,0.14466546112115733,80,553
+2021_2022,4.4,144,Facultad de Filología,Grado en Filología Clásica,16,184,Grado en Filología Clásica,0.6506329113924051,4626,7110,0.55,22,40
+2021_2022,4.39,552,Facultad de Filología,Grado en Estudios Franceses,16,182,Grado en Estudios Franceses,0.5731277533039647,7806,13620,0.3108108108108108,23,74
+2021_2022,4.38,1984,"Facultad de Ciencias de la
+Educación","Grado en Ciencias de la Actividad Física
+y del Deporte",18,154,Grado en Ciencias de la Actividad Física y del Deporte,0.8728833770569998,21960,25158,0.08943089430894309,11,123
+2021_2022,4.38,1733,"Facultad de Ciencias de la
+Educación",Grado en Pedagogía,18,174,Grado en Pedagogía,0.8997424892703862,31446,34950,0.07894736842105263,12,152
+2021_2022,4.38,1088,Facultad de Comunicación,"Grado en Publicidad y Relaciones
+Públicas",2,211,Grado en Publicidad y Relaciones Públicas,0.9005129112133003,30549,33924,0.0979020979020979,14,143
+2021_2022,4.38,2260,Facultad de Turismo y Finanzas,Grado en Turismo,7,179,Grado en Turismo,0.5993550987505039,35688,59544,0.3020833333333333,87,288
+2021_2022,4.37,1252,Facultad de Filología,Grado en Filología Hispánica,16,159,Grado en Filología Hispánica,0.5575966322234979,17484,31356,0.29457364341085274,38,129
+2021_2022,4.36,1993,Facultad de Turismo y Finanzas,Grado en Finanzas y Contabilidad,7,161,Grado en Finanzas y Contabilidad,0.43134704495569465,31836,73806,0.5037783375314862,200,397
+2021_2022,4.35,921,E.T.S. Ingeniería Informática,Grado en Ingeniería Informática-Ingeniería de Computadores,3,204,Grado en Ingeniería Informática-Ingeniería de Computadores,0.4810625986322988,10974,22812,0.5689655172413793,66,116
+2021_2022,4.35,3387,"Facultad de CC. Económicas y
+Empresariales","Grado en Administración y Dirección de
+Empresas",1,151,Grado en Administración y Dirección de Empresas,0.5328775172266439,59856,112326,0.374749498997996,187,499
+2021_2022,4.34,1251,Facultad de Matemáticas,Grado en Matemáticas,17,171,Grado en Matemáticas,0.6769792162462319,25602,37818,0.13013698630136986,19,146
+2021_2022,4.34,1986,Facultad de Química,Grado en Química,22,177,Grado en Química,0.6022139921045134,22195,36856,0.1917808219178082,28,146
+2021_2022,4.33,2047,Facultad de Bellas Artes,Grado en Bellas Artes,21,190,Grado en Bellas Artes,0.8629832617390016,34956,40506,0.15254237288135594,27,177
+2021_2022,4.33,6277,"Facultad de Ciencias de la
+Educación",Grado en Educación Primaria,18,195,Grado en Educación Primaria,0.8888988083685906,114503,128815,0.1068702290076336,56,524
+2021_2022,4.32,1173,Facultad de Comunicación,Grado en Comunicación Audiovisual,2,192,Grado en Comunicación Audiovisual,0.8978167501789549,30102,33528,0.0783132530120482,13,166
+2021_2022,4.32,1240,Facultad de Medicina,"Grado en Biomedicina Básica y
+Experimental",14,217,Grado en Biomedicina Básica y Experimental,0.9151492159838138,10855,11862,0.15384615384615383,8,52
+2021_2022,4.31,156,Facultad de Geografía e Historia,Grado en Antropología Social y Cultural,4,188,Grado en Antropología Social y Cultural,0.6169491525423729,5460,8850,0.4107142857142857,23,56
+2021_2022,4.3,2196,E.T.S. de Ingeniería,"Grado en Ingeniería de Tecnologías
+Industriales",45,203,Grado en Ingeniería de Tecnologías Industriales,0.5847917108842882,45462,77740,0.14885496183206107,39,262
+2021_2022,4.3,1403,"Facultad de CC. Económicas y
+Empresariales",Grado en Economía,1,156,Grado en Economía,0.5472289499928765,23046,42114,0.28402366863905326,48,169
+2021_2022,4.29,848,Escuela Politécnica Superior,Grado en Ingeniería Química Industrial,23,209,Grado en Ingeniería Química Industrial,0.4198943661971831,5724,13632,0.5161290322580645,32,62
+2021_2022,4.29,747,Facultad de Bellas Artes,"Grado en Conservación y Restauración de
+Bienes Culturales",21,193,Grado en Conservación y Restauración de Bienes Culturales,0.8431183830606352,10512,12468,0.1904761904761905,12,63
+2021_2022,4.28,988,E.T.S. Ingeniería Informática,Grado en Ingeniería Informática-Tecnologías Informáticas,3,206,Grado en Ingeniería Informática-Tecnologías Informáticas,0.5296554009277668,19182,36216,0.3660130718954248,56,153
+2021_2022,4.27,770,Facultad de Física,Grado en Física,6,162,Grado en Física,0.6265682656826568,15282,24390,0.21929824561403508,25,114
+2021_2022,4.27,292,Facultad de Física,Grado en Ingeniería de Materiales,6,222,Grado en Ingeniería de Materiales,0.5499617151607963,4309,7836,0.2765957446808511,13,47
+2021_2022,4.26,462,E.T.S. de Ingeniería,Grado en Ingeniería Química,45,208,Grado en Ingeniería Química,0.4543893129770992,7143,15720,0.3559322033898305,21,59
+2021_2022,4.26,1199,Facultad de Ciencias del Trabajo,"Grado en Relaciones Laborales y
+Recursos Humanos",8,178,Grado en Relaciones Laborales y Recursos Humanos,0.5955476958285655,34350,57678,0.20361990950226244,45,221
+2021_2022,4.26,1851,Facultad de Filología,Grado en Estudios Ingleses,16,183,Grado en Estudios Ingleses,0.6657364341085271,25764,38700,0.2602739726027397,38,146
+2021_2022,4.24,1563,E.T.S. de Ingeniería,Grado en Ingeniería Aeroespacial,45,197,Grado en Ingeniería Aeroespacial,0.6413161182840483,23097,36015,0.1015625,13,128
+2021_2022,4.23,465,Escuela Politécnica Superior,Grado en Ingeniería Eléctrica,23,200,Grado en Ingeniería Eléctrica,0.3720218579234973,5106,13725,0.5694444444444444,41,72
+2021_2022,4.23,1245,Escuela Politécnica Superior,"Grado en Ingeniería en Diseño Industrial
+y Desarrollo del Producto",23,202,Grado en Ingeniería en Diseño Industrial y Desarrollo del Producto,0.5602803295766644,17748,31677,0.2066115702479339,25,121
+2021_2022,4.21,411,E.T.S. de Ingeniería,Grado en Ingeniería Civil,45,225,Grado en Ingeniería Civil,0.4804619032889989,6990,14548,0.5806451612903226,36,62
+2021_2022,4.21,1265,"Facultad de CC. Económicas y
+Empresariales","Grado en Marketing e Investigación de
+Mercados",1,180,Grado en Marketing e Investigación de Mercados,0.7419833178869324,24018,32370,0.2846715328467153,39,137
+2021_2022,4.2,1031,E.T.S. de Ingeniería,"Grado en Ingeniería de las Tecnologías de
+Telecomunicación",45,199,Grado en Ingeniería de las Tecnologías de Telecomunicación,0.4895498727629219,17602,35956,0.3359375,43,128
+2021_2022,4.19,932,Escuela Politécnica Superior,Grado en Ingeniería Electrónica Industrial,23,201,Grado en Ingeniería Electrónica Industrial,0.3632583170254403,8910,24528,0.43103448275862066,50,116
+2021_2022,4.19,1365,Facultad de Geografía e Historia,Grado en Historia,4,166,Grado en Historia,0.628755659212512,27498,43734,0.2222222222222222,40,180
+2021_2022,4.14,1317,Escuela Politécnica Superior,Grado en Ingeniería Mecánica,23,207,Grado en Ingeniería Mecánica,0.46626865671641793,14058,30150,0.319672131147541,39,122
+2021_2022,4.12,1994,Facultad de Comunicación,Grado en Periodismo,2,210,Grado en Periodismo,0.7795940607546655,51507,66069,0.1010452961672474,29,287
+2021_2022,4.11,3807,E.T.S. Ingeniería Informática,Grado en Ingeniería Informática-Ingeniería del Software,3,205,Grado en Ingeniería Informática-Ingeniería del Software,0.686593492747942,42036,61224,0.20168067226890757,48,238
+2021_2022,4.07,791,E.T.S. de Ingeniería,"Grado en Ingeniería Electrónica, Robótica
+y Mecatrónica (UMA-US)",45,228,"Grado en Ingeniería Electrónica, Robótica y Mecatrónica (UMA-US)",0.661689145793192,12363,18684,0.14666666666666667,11,75
