@@ -1,25 +1,25 @@
-Cod_Centro, Nombre_Centro
-1,Facultad de CC. Económ. y Empresariales
-2,Facultad de Comunicación
-3,E.T.S. Ingeniería Informática
-4,Facultad de Geografía e Historia
-5,Facultad de Biología
-6,Facultad de Física
-7,Facultad de Turismo y Finanzas
-8,Facultad de Ciencias del Trabajo
-11,Facultad de Enfermería, Fisioterapia y Podología
-12,Facultad de Filosofía
-13,Facultad de Psicología
-14,Facultad de Medicina
-15,E.T.S. de Arquitectura
-16,Facultad de Filología
-17,Facultad de Matemáticas
-18,Facultad de Ciencias de la Educación
-19,Facultad de Farmacia
-20,Facultad de Derecho
-21,Facultad de Bellas Artes
-22,Facultad de Química
-23,Escuela Politécnica Superior
-45,E.T.S. de Ingeniería
-98,E.T.S. de Ingeniería de Edificación
-302,Escuela Internacional de Posgrado
+Cod_Centro, Nombre_Centro, Zona
+1,Facultad de CC. Económ. y Empresariales, Ramón y Cajal
+2,Facultad de Comunicación, Cartuja
+3,E.T.S. Ingeniería Informática, Reina Mercedes
+4,Facultad de Geografía e Historia, Rectorado
+5,Facultad de Biología, Reina Mercedes
+6,Facultad de Física, Reina Mercedes
+7,Facultad de Turismo y Finanzas, Ramón y Cajal
+8,Facultad de Ciencias del Trabajo, Ramón y Cajal
+11,Facultad de Enfermería Fisioterapia y Podología, Macarena
+12,Facultad de Filosofía, Ramón y Cajal
+13,Facultad de Psicología, Ramón y Cajal
+14,Facultad de Medicina, Macarena
+15,E.T.S. de Arquitectura, Reina Mercedes
+16,Facultad de Filología, Rectorado
+17,Facultad de Matemáticas, Reina Mercedes
+18,Facultad de Ciencias de la Educación, Ramón y Cajal
+19,Facultad de Farmacia, Reina Mercedes
+20,Facultad de Derecho, Ramón y Cajal
+21,Facultad de Bellas Artes, Setas
+22,Facultad de Química, Reina Mercedes
+23,Escuela Politécnica Superior, Cartuja
+45,E.T.S. de Ingeniería, Cartuja
+98,E.T.S. de Ingeniería de Edificación, Reina Mercedes
+302,Escuela Internacional de Posgrado, Pabellón de México
