@@ -1,0 +1,281 @@
+---
+title: "TrabajoDS"
+output: html_document
+date: "2026-03-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Análisis Exploratorio Sobre la Satisfacción Estudiantil en la Universidad de Sevilla y su Posible Relación con el Rendimiento Académico
+
+La evaluación de la calidad docente es uno de los pilares fundamentales de la educación. Las universidades, entre ellas la Universidad de Sevilla emplean las encuestas de satisfacción como el instrumento principal para medir la percepción del alumnado sobre sus titulaciones. Sin embargo, la interpretación de estos resultados plantea interrogantes comunidad académica: ¿Reflejan estas encuestas una valoración objetiva de la labor docente y organizativa, o están intrínsecamente condicionadas por el éxito o fracaso académico del estudiante?
+
+Por medio de este análisis exploratorio se pretende arrojar luz sobre esta cuestión en el contexto específico de la Universidad de Sevilla. A través de un análisis exploratorio de datos empíricos, este estudio cruza la percepción subjetiva de los estudiantes (la nota media otorgada en las encuestas de satisfacción) con las métricas objetivas de sus respectivas titulaciones (tasas de rendimiento y de abandono).
+
+A lo largo de este documento, se analizará la distribución general de las calificaciones, se investigará la influencia de factores estructurales como la masificación en las aulas y, finalmente, se evaluará mediante modelos estadísticos y visualizaciones en cuadrantes si la dureza de una carrera o su volumen de deserción determinan la nota que el alumnado otorga a su grado. El propósito último es comprender qué nos dicen realmente los datos sobre la experiencia universitaria.
+
+## Librerías
+```{r}
+library(tidyverse)
+library(readxl)
+library(tidyverse)
+library(e1071) #para curtosis y asimetría
+```
+
+## Carga de datos y generación del dataset final
+```{r}
+setwd("C:/Users/juanr/OneDrive/Escritorio/Máster/DS/Poyecto")
+```
+
+
+```{r}
+df_satisfaccion <- read_excel("DatasetFusionado.xlsx")
+df_rendimiento <- read_csv("dataset_abandono_rendimiento_estricto.csv")
+```
+Los resultados de satisfacción académica se encontraban en en los informes anuales de calidad y encuestas de satisfacción publicados por la Universidad de Sevilla. Estos documentos generados para los distintos cursos académicos, están en formato PDF, lo que impide su tratamiento directo. Para poder acceder a esta información y trabajar con ella se han detectado las tablas específicas en estos documentos que relacionan las titulaciones de la Universidad de Sevilla con sus resultados en las encuestas de satisfacción del curso de emisión del documento. Una vez seleccionadas todas las tablas de un documento se añaden al excel mediante la herramienta wizard, tras repetir esto con todos los documentos obtenemos una tabla que engloba los datos clasificados mediante una nueva columna por curso académico.
+
+```{r}
+head(df_satisfaccion)
+head(df_rendimiento)
+```
+
+### Limpieza de los dataset y unión de los mismos
+```{r}
+#limpieza
+df_satisfaccion_limpio <- df_satisfaccion %>%
+  mutate(
+    Media = as.numeric(str_replace(Media, ",", ".")),
+    Titulacion_Join = str_to_lower(Titulacion),
+    Titulacion_Join = str_replace_all(Titulacion_Join, "[[:punct:]\u00AD]", ""),
+    Titulacion_Join = str_squish(Titulacion_Join),
+    Curso = str_trim(Curso)
+  )
+df_rendimiento_limpio <- df_rendimiento %>%
+  rename(Curso = Año) %>%
+  mutate(
+    Titulacion_Join = str_to_lower(Titulacion),
+    Titulacion_Join = str_replace_all(Titulacion_Join, "[[:punct:]\u00AD]", ""),
+    Titulacion_Join = str_squish(Titulacion_Join),
+    Curso = str_trim(Curso)
+  )
+
+#join por Curso y por el nombre de la Titulación
+df_final <- df_satisfaccion_limpio %>%
+  inner_join(df_rendimiento_limpio, by = c("Curso", "Titulacion_Join")) %>%
+  select(-Titulacion_Join)
+
+write_csv(df_final, "Dataset_Final.csv")
+
+#resumen del cruce
+print(paste("Filas totales:", nrow(df_final)))
+print(paste("Grados con datos de rendimiento encontrados:", sum(!is.na(df_final$Tasa_Rendimiento))))
+print(paste("Grados con datos de satisfaccion encontrados:", sum(!is.na(df_final$Media))))
+```
+
+Para poder realizar correctamente la fusión de los dataset ha sido necesario reducir el formato de las columnas de titulación al más sencillo posible, eliminando signos de puntuación, guiones, o cualquier elemento que pueda inducir a error y forzar todo a minúsculas, ya que si no no se realizarán correctamente las comparaciones a la hora de hacer el join.
+Cabe indicar que se ha perdido una cantidad de información considerable por no estar definidos los nombres de algunas titulaciones igual en los dos conjuntos de datos, siendo un ejemplo de esto el grado Ingeniería de la Salud, que por el uso de siglas para indicar cierta información que acompaña al título, como puede ser su pertenencia a la UMA y la US, no es identificado correctamente a la hora de realizar el tratamiento y las filas son eliminadas.
+
+```{r}
+head(df_satisfaccion_limpio)
+head(df_rendimiento_limpio)
+```
+
+
+```{r}
+df <- read.csv("Dataset_Final.csv")
+head(df)
+```
+
+## Estudio y Análisis del Dataset
+
+### Distribución de la Satisfacción
+
+En la evaluación de la satisfacción en la Universidad de Sevilla se emplea una escala del 1 al 5, analizaremos la distribución de la cantidad de muestras para cada valor posible en la escala.
+```{r}
+#métricas
+media <- mean(df_final$Media, na.rm = TRUE)
+mediana <- median(df_final$Media, na.rm = TRUE)
+min <- min(df_final$Media, na.rm = TRUE)
+asimetria <- skewness(df_final$Media, na.rm = TRUE)
+curtosis <- kurtosis(df_final$Media, na.rm = TRUE)
+
+#gráfica
+ggplot(df_final, aes(x = Media)) +
+  
+  geom_histogram(binwidth = 0.05, fill = "blue", color = "white", alpha = 0.9) +
+  
+  geom_vline(aes(xintercept = media, color = "Media"), 
+             linetype = "dashed", size = 1) +
+  
+  geom_vline(aes(xintercept = mediana, color = "Mediana"), 
+             linetype = "dotted", size = 1) +
+  
+  scale_color_manual(values = c("Media" = "red", "Mediana" = "orange")) +
+  theme_minimal() +
+  labs(
+    title = "Distribución de la Satisfacción en la US",
+    subtitle = "Frecuencia de las notas medias de las titulaciones (Escala 1 al 5)",
+    x = "Nota Media de Satisfacción",
+    y = "Nº de Grados/Cursos"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    legend.position = "top"
+  )
+
+print(paste("Curtosis:", round(curtosis, 3)))
+print(paste("Asimetría:", round(asimetria, 3)))
+```
+En primer lugar podemos observar que los datos se alejan de una distribución normal perfecta, encontramos una curtosis (0.744) que presenta una tendencia positiva, ya que el grueso de los datos se concentran en el intervalo 4 a 4.5, reflejando una varianza muy baja. Esta concentración de valores indica un alto grado de consenso en las notas que los alumnos asignan en las encuestas. La asimetría (-0.298) indica un claro sesgo hacia los valores más altos de la escala, el cual se observa claramente al no haber ninguna nota menor a 3.5. De esta información podemos concluir que hay un alto nivel de complacencia a la hora de realizar las valoraciones en las encuestas de satisfacción, por ello no podemos considerar la escala completa para medir la satisfacción real, si quisiesemos establecer un umbral de aprobado/suspenso, que normalmente sería 3 ya que está a mitad de escala, deberíamos seleccionar un valor más cercano a 4, ya que incluso reduciendo el intervalo del "aprobado" a un cuarto de la escala la inmensa mayoría de grados estarían en ese tramo y por tanto considerados aprobados.
+
+
+### Cantidad de Alumnos frente a Satisfacción
+
+Ahora pasaremos a observar si el comportamiento de la satisfacción se ve influenciado por la cantidad de alumnos del grado o si por el contrario son independientes
+```{r}
+ggplot(df_final, aes(x = Matriculados_Rendimiento, y = Media)) +
+  geom_point(color = "blue", alpha = 0.6, size = 4, stroke = 0.5) +
+  geom_smooth(method = "lm", color = "red", se = TRUE, size = 1.2, alpha = 0.3) +
+
+  theme_minimal() +
+  labs(
+    title = "Cantidad de Alumnos frente a Satisfacción",
+    x = "Volumen de Matriculados",
+    y = "Satisfacción"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 15),
+    axis.title = element_text(face = "bold")
+  )
+```
+En el gráfico se puede apreciar con claridad una ausencia de correlación lineal entre ambas variables. La nube de puntos no presenta ninguna tendencia, hecho que se ve confirmado por la horizontalidad de la recta de regresión (en rojo). Por tanto podemos afirmar que el resultado de las encuestas de satisfacción no se ve inlfuenciado de forma significativa por la cantidad de alumnos matriculados en el grado encuestado.
+
+### Relación entre la Satisfacción del Alumnado y su Rendimiento
+
+Hemos alcanzado la conclusión de que la cantidad de alumnos no inlfuye en las encuestas de satisfación, quizás esto se ve fomentado por lo que pudimos observar en la primera gráfica, donde descubrimos que las encuestas son realizadas por el alumnado con cierto grado de condescendencia, concentrando los resultados en una franja estrecha de notas. Llegados a este punto debemos responder la pregunta que más dudas suscita, ¿Influye el rendimiento que ha tenido un alumno durante el curso a la hora de evaluar su grado en la encuesta de satisfacción?
+Para responder a esta cuestión utilizaremos una regresión lineal como conclusión visual y el coeficiente de Pearson como resolución analítica, pero para darle más profundidad y dotar de interés al análisis estableceremos 4 cuadrantes definidos por 2 cortes y en ellos dispondremos todas las muestras.
+```{r}
+print(paste("media rendimiento: ", mean(df_final$Tasa_Rendimiento, na.rm = TRUE)))
+print(paste("media satisfacción", mean(df_final$Media, na.rm = TRUE)))
+
+#asignación de cuadrantes
+df_final$Cuadrante <- "Ninguno"
+df_final$Cuadrante[df_final$Tasa_Rendimiento >= 0.65 & df_final$Media >= 4] <- "1. Alto Rend, Alta Sat"
+df_final$Cuadrante[df_final$Tasa_Rendimiento < 0.65 & df_final$Media >= 4] <- "2. Bajo Rend, Alta Sat"
+df_final$Cuadrante[df_final$Tasa_Rendimiento >= 0.65 & df_final$Media < 4] <- "3. Alto Rend, Baja Sat"
+df_final$Cuadrante[df_final$Tasa_Rendimiento < 0.65 & df_final$Media < 4] <- "4. Bajo Rend, Baja Sat"
+
+ggplot(df_final, aes(x = Tasa_Rendimiento, y = Media, color = Cuadrante)) +
+  
+  geom_vline(xintercept = 0.65, linetype = "dashed", color = "black", size = 0.8) +
+  geom_hline(yintercept = 4, linetype = "dashed", color = "black", size = 0.8) +
+  
+  geom_point(alpha = 0.8, size = 3) +
+  
+  geom_smooth(method = "lm", color = "yellow", se = FALSE, linetype = "dashed", size=2, inherit.aes = FALSE, aes(x = Tasa_Rendimiento, y = Media)) +
+  
+  scale_color_manual(values = c("1. Alto Rend, Alta Sat" = "darkgreen", 
+                                "2. Bajo Rend, Alta Sat" = "blue",
+                                "3. Alto Rend, Baja Sat" = "orange",
+                                "4. Bajo Rend, Baja Sat" = "red")) +
+  
+  theme_minimal() +
+  labs(
+    title = "Rendimiento vs Satisfacción",
+    subtitle = paste("Coef de Pearson:", round(cor(df_final$Tasa_Rendimiento, df_final$Media, use = "complete.obs"),2), "Valores de corte:", 0.65, "y", 4),
+    x = "Tasa de Rendimiento (0 a 1)",
+    y = "Nota Media de Satisfacción",
+    color = "Perfil del Grado:"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 15),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold")
+  )
+```
+El corte en el eje de la satisfacción se localiza en el valor 4, como vimos previamente todos los valores se localizan entre 3.5 y 4.75, encontrándose la inmensa mayoría de estos entre aproximadamente 3.8 y 4.5. En un inicio se planteó establecer el umbral en la media de las muestras (4.18), sin embargo se consideró más apropiado establecer el 4 como umbral, ya que teniendo en cuenta que las valoraciones de las carreras tienden a hacerse al alza parece más lógico considerar aquellas por debajo de 4 como las carreras verdaderamente "decepcionantes" a los ojos del alumnado, y aquellas localizadas en el último tramo de la escala (4-5) como carreras altamente satisfactorias para los alumnos de la Universidad de Sevilla. En cuanto al rendimiento se decidió trazar el límite en 0.65, ligeramente inferior a la media. Este valor es el que se emplea para otorgar la beca a los alumnos, es por ello que lo tomaremos en consideración como indicador ideal de buen o mal rendimiento.
+
+Pasando a explicar los cuadrantes, contamos con 4 espacios separados por los 2 umbrales que hemos definido anteriormente, en ellos se localizan puntos que corresponden a el rendimiento y la satisfacción para un grado en un curso concreto. En el cuadrante inferior izquierdo encontramos el grupo 4 donde se sitúan aquellos grados que obtuvieron una nota inferior en la encuesta de satisfacción acompañada de un rendimiento deficiente. El cuadrante inmediatamente superior alberga aquellos grados con bajo rendimiento académico pero que por el contrario si que se perciben como buenos por parte del alumnado. Ahora pasamos al otro lado de la gráfica, donde el rendimiento pasa a ser positivo, por un lado tenemos en el cuadrante inferior carreras con baja satisfacción, este cuadrante es el que menos carreras comprende, por lo que podemos deducir que si una carrera presenta un rendimiento academico alto, difícilmente sera calificada como poco satisfactoria. Por último, para aquellas carreras con elevado grado de satisfacción y buen rendimiento academico tenemos el cuadrante superior derecho, siendo este el cuadrante con mayor representación, seguido por el segundo, lo cual se explica por las elevadas puntuaciones en satisfacción a nivel general en los grados de la Universidad de Sevilla.
+
+Por último, debemos mencionar que el coeficiente de Pearson calculado ha sido 0.31, lo cual implica un indicio de correlación entre las variables pero a medio camino entre bajo y moderado. Una vez más, esto se ve influenciado por la complacencia con la que los alumnos completan las encuestas. Quizás si las encuestas de satisfacción diesen lugar a unos resultados más acordes a la realidad de los grados esta relación con el rendimiento se viese incrementada y más cercana a una correlación moderada.
+
+### Mejores y Peores Registros Combinando Satisfacción y Rendimiento
+
+Para identificar las titulaciones situadas en los extremos absolutos de la universidad, se ha calculado una puntuación combinada del rendimiento y la satisfacción. Dado que la Tasa de Rendimiento y la Satisfacción poseen magnitudes diferentes, se ha procedido a la estandarización de ambas variables mediante el uso de Z-scores. La suma de ambas métricas estandarizadas otorga un peso equitativo del 50% a cada factor, permitiendo ordenar de forma objetiva los diferentes grados y cursos y establercer el Top 10 de titulaciones más exitosas y de aquellas que se encuentran en estado más crítico.
+
+```{r}
+#Puntuación combinada usando z-scores
+df_ranking <- df_final %>%
+  mutate(
+    Z_Rendimiento = scale(Tasa_Rendimiento),
+    Z_Satisfaccion = scale(Media),
+    Puntuacion_Combinada = Z_Rendimiento + Z_Satisfaccion
+  ) %>%
+  
+  select(Curso, Titulacion.x, Tasa_Rendimiento, Media, Puntuacion_Combinada)
+
+top_10 <- df_ranking %>%
+  arrange(desc(Puntuacion_Combinada)) %>%
+  head(10)
+
+bottom_10 <- df_ranking %>%
+  arrange(Puntuacion_Combinada) %>%
+  head(10)
+
+print(top_10)
+
+print(bottom_10)
+```
+
+Al observar las diez titulaciones con mayor puntuación combinada, destacan grados como Criminología, Fisioterapia y Educación Infantil. Estas titulaciones representan el escenario ideal para el alumno, logran que la inmensa mayoría de sus matriculados superen los créditos con éxito (rendimientos muy por encima del umbral del 0.65) y, de forma paralela, reciben valoraciones sobresalientes por parte del alumnado en las encuestas de calidad docente. Cabe destacar que Estudios Árabes e Islámicos es el último de los diez, con un rendimiento al límite de ser considerado alto pero con el mayor registro de media de satisfacción de todas las titulaciones.
+En el extremo opuesto encontramos las carreras con peores resultados y que hemos considerado críticas. En los puestos más bajos del ranking un pleno de ingenierías, liderado por Ingeniería Electrónica Industrial, Ingeniería Eléctrica e Ingeniería Civil. Estas carreras tienen un valor de satisfacción considerablemente bajo si tenemos en cuenta donde se localiza este valor para el grueso de carreras, lo que parece significativo es que en este caso es mucho más constante que la tasa de rendimiento sea alarmantemente baja, llegando en muchos casos a ser inferior a 0.5. Esto refuerza la hipótesis de que un rendimiento bajo se refleja en una satisfacción menor, por lo que para este tipo de casos si que ambas métricas son indicativas una de la otra y pueden emplearse para localizar que titulaciones necesitan ser revisadas por la universidad con el objetivo de lograr un mayor grado de satisfacción y éxito academico por parte del alumnado.
+
+
+### Influencia del Abandono
+
+Hemos encontrado una ligera relación entre la satisfacción y el rendimiento, pero quizás esperábamos encontrar una mayor correlación entre las variables. Dado que contamos con los datos de abandono académico, comprobaremos si en este caso encontramos una correlación mayor, ya que la lógica nos invita a pensar que si el abandono es elevado, necesariamente la satisfacción de los estudiantes debe ser baja.
+
+```{r}
+correlacion_abandono <- cor(df_final$Tasa_Abandono, df_final$Media, use = "complete.obs")
+
+ggplot(df_final, aes(x = Tasa_Abandono, y = Media)) +
+
+  geom_point(color = "blue", alpha = 0.6, size = 3) +
+
+  geom_smooth(method = "lm", color = "yellow", se = FALSE, size = 1.2, linetype = "dashed") +
+  
+  theme_minimal() +
+  labs(
+    title = "El Espejismo del Abandono: Deserción vs Satisfacción",
+    subtitle = paste("Coef de Pearson:", round(correlacion_abandono, 3)),
+    x = "Tasa de Abandono",
+    y = "Nota Media de Satisfacción"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(color = "gray30", size = 12)
+  )
+```
+
+Para este caso el resultado es notablamente peor que para el rendimiento, no se observa ninguna tendencia en la nube de puntos y el coeficiente de Pearson es de -0.146, lo cual indica una correlación negativa muy débil, es decir, hay una ligerísima tendencia a que las carreras con más abandonos tengan una nota un poco más baja, pero la relación es tan floja que demuestra que el abandono está motivado por otras cosas, o almenos no se ve reflejado en las encuestas de satisfacción.
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
