@@ -3,13 +3,13 @@ title: 'Agrupamiento de Titulaciones en Clústeres: Análisis de Rendimiento y A
 author: "Equipo Data Science"
 date: "`r Sys.Date()`"
 output:
-  word_document:
-    toc: true
   html_document:
     toc: true
     toc_float: true
     theme: flatly
     highlight: tango
+  word_document:
+    toc: true
   pdf_document:
     toc: true
 ---
@@ -21,8 +21,14 @@ knitr::opts_chunk$set(
   warning = FALSE,
   fig.width = 12,
   fig.height = 8,
-  dpi = 300
+  dpi = 300,
+  dev = "png",
+  dev.args = list(type = "cairo")
 )
+
+# Set encoding to UTF-8
+options(encoding = "UTF-8")
+Sys.setlocale("LC_ALL", "Spanish_Spain.UTF-8")
 
 # Cargar librerías necesarias
 library(tidyverse)
@@ -55,7 +61,7 @@ Este análisis responde a la pregunta grupal: **"Las titulaciones pueden agrupar
 
 ```{r load_data}
 # Cargar datos
-df <- read_csv("data/dataset_abandono_rendimiento_estricto.csv")
+df <- read_csv("../data/dataset_abandono_rendimiento_estricto.csv")
 
 # Visualizar estructura de los datos
 str(df)
@@ -70,8 +76,15 @@ summary(df)
 # 2.1 Información General del Dataset
 
 ```{r data_info}
-cat("Número de titulaciones únicas:", n_distinct(df$Titulacion), "\n")
-cat("Años disponibles:", paste(unique(df$Año), collapse = ", "), "\n")
+name_ascii <- iconv(names(df), to = "ASCII//TRANSLIT")
+year_idx <- which(tolower(name_ascii) %in% c("ano", "anio", "year"))
+if (length(year_idx) == 0) {
+  year_idx <- grep("ano|anio|year", tolower(name_ascii))
+}
+year_values <- if (length(year_idx) > 0) unique(df[[year_idx[1]]]) else NA
+
+cat("Numero de titulaciones unicas:", n_distinct(df$Titulacion), "\n")
+cat("Cursos disponibles:", paste(year_values, collapse = ", "), "\n")
 cat("Número total de observaciones:", nrow(df), "\n")
 cat("Número de centros:", n_distinct(df$Cod_Centro), "\n")
 ```
@@ -143,7 +156,7 @@ wss <- sapply(1:10, function(k) {
   kmeans(features_normalized, k, nstart = 10)$tot.withinss
 })
 
-# Gráfico Elbow
+# Grafico Elbow
 elbow_df <- data.frame(
   k = 1:10,
   wss = wss
@@ -153,8 +166,8 @@ ggplot(elbow_df, aes(x = k, y = wss)) +
   geom_line(color = "#3498db", size = 1) +
   geom_point(color = "#3498db", size = 3) +
   labs(
-    title = "Método del Codo para Determinar Número Óptimo de Clústeres",
-    x = "Número de Clústeres (k)",
+    title = "Metodo del Codo para Determinar Numero Optimo de Clusters",
+    x = "Numero de Clusters (k)",
     y = "Suma Intra-cluster de Cuadrados"
   ) +
   theme_minimal() +
@@ -165,10 +178,10 @@ ggplot(elbow_df, aes(x = k, y = wss)) +
   )
 ```
 
-# 4.1 Análisis de Silhouette
+# 4.1 Analisis de Silhouette
 
 ```{r silhouette_analysis, fig.align='center'}
-# Análisis de Silhouette para k = 2 a 6
+# Analisis de Silhouette para k = 2 a 6
 silhouette_scores <- sapply(2:6, function(k) {
   km <- kmeans(features_normalized, k, nstart = 10)
   sil <- silhouette(km$cluster, dist(features_normalized))
@@ -184,8 +197,8 @@ ggplot(sil_df, aes(x = k, y = silhouette)) +
   geom_line(color = "#e74c3c", size = 1) +
   geom_point(color = "#e74c3c", size = 3) +
   labs(
-    title = "Análisis de Silhouette: Calidad de la Partición",
-    x = "Número de Clústeres (k)",
+    title = "Analisis de Silhouette: Calidad de la Particion",
+    x = "Numero de Clusters (k)",
     y = "Coeficiente de Silhouette"
   ) +
   theme_minimal() +
@@ -195,21 +208,18 @@ ggplot(sil_df, aes(x = k, y = silhouette)) +
     panel.grid.major = element_line(color = "gray90")
   )
 
-cat("Scores de Silhouette:\n")
-print(sil_df)
-
 cat("\n")
 cat("Silhouette Scores por k:\n")
 print(sil_df)
-cat("\nk óptimo según Silhouette:", sil_df$k[which.max(sil_df$silhouette)], "\n")
+cat("\nk optimo segun Silhouette:", sil_df$k[which.max(sil_df$silhouette)], "\n")
 ```
 
 ------------------------------------------------------------------------
 
-# 5. Aplicación de K-means Clustering
+# 5. Aplicacion de K-means Clustering
 
 ```{r kmeans_optimal}
-# Determinar k óptimo basado en silhouette analysis
+# Determinar k optimo basado en silhouette analysis
 silhouette_scores_optimal <- sapply(2:6, function(k) {
   km <- kmeans(features_normalized, k, nstart = 10)
   sil <- silhouette(km$cluster, dist(features_normalized))
@@ -217,27 +227,27 @@ silhouette_scores_optimal <- sapply(2:6, function(k) {
 })
 
 k_optimal_value <- which.max(silhouette_scores_optimal) + 1  # +1 porque comienza en k=2
-cat("K ÓPTIMO DETERMINADO:", k_optimal_value, "\n")
+cat("K OPTIMO DETERMINADO:", k_optimal_value, "\n")
 cat("Silhouette Score:", round(max(silhouette_scores_optimal), 4), "\n\n")
 
-# Usar k óptimo para clustering final
+# Usar k optimo para clustering final
 set.seed(123)
 k_optimal <- k_optimal_value
 kmeans_result <- kmeans(features_normalized, centers = k_optimal, nstart = 25, iter.max = 300)
 
-# Crear etiquetas dinámicas para clusters
-cluster_labels <- paste0("Clúster ", 1:k_optimal)
+# Crear etiquetas dinamicas para clusters
+cluster_labels <- paste0("Cluster ", 1:k_optimal)
 
-# Añadir clústeres a los datos originales
+# Anadir clusters a los datos originales
 titulaciones_clustered <- titulaciones_agg %>%
   mutate(
     Cluster = as.factor(kmeans_result$cluster),
-    Cluster_Label = paste0("Clúster ", Cluster)
+    Cluster_Label = paste0("Cluster ", Cluster)
   )
 
-# Resumen de clústeres
-cat("RESUMEN DE CLÚSTERES\n")
-cat("Número de titulaciones por clúster:\n")
+# Resumen de clusters
+cat("RESUMEN DE CLUSTERS\n")
+cat("Numero de titulaciones por cluster:\n")
 print(table(titulaciones_clustered$Cluster))
 ```
 
@@ -258,7 +268,7 @@ cluster_summary <- titulaciones_clustered %>%
 print(cluster_summary)
 
 # Tabla detallada con mejor formato
-knitr::kable(cluster_summary, digits = 4, caption = "Características de Clústeres")
+knitr::kable(cluster_summary, digits = 4, caption = "Caracteristicas de Clusters")
 ```
 
 ------------------------------------------------------------------------
@@ -270,7 +280,7 @@ knitr::kable(cluster_summary, digits = 4, caption = "Características de Clúste
 paleta_colores <- c("#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6", "#1abc9c")
 colores <- paleta_colores[1:k_optimal]
 
-# Gráfico principal de clústeres
+# Grafico principal de clusters
 plot_clusters <- ggplot(titulaciones_clustered, aes(
   x = Tasa_Rendimiento,
   y = Tasa_Abandono,
@@ -299,11 +309,11 @@ plot_clusters <- ggplot(titulaciones_clustered, aes(
   ) +
   scale_color_manual(values = colores, labels = cluster_labels) +
   labs(
-    title = "Agrupamiento de Titulaciones según Rendimiento y Abandono",
-    subtitle = "Triángulos representan los centroides de cada clúster",
-    x = "Tasa de Rendimiento (media del período)",
-    y = "Tasa de Abandono (media del período)",
-    color = "Clúster"
+    title = "Agrupamiento de Titulaciones segun Rendimiento y Abandono",
+    subtitle = "Triangulos representan los centroides de cada cluster",
+    x = "Tasa de Rendimiento (media del periodo)",
+    y = "Tasa de Abandono (media del periodo)",
+    color = "Cluster"
   ) +
   theme_minimal() +
   theme(
@@ -381,7 +391,7 @@ plot_clusters_clean <- ggplot(titulaciones_clustered, aes(
     "text",
     x = min(titulaciones_clustered$Tasa_Rendimiento) + 0.02,
     y = min(titulaciones_clustered$Tasa_Abandono) + 0.02,
-    label = "BAJO RENDIMIENTO\nBAJO ABANDONO\n(PROBLEMÁTICO)",
+    label = "BAJO RENDIMIENTO\nBAJO ABANDONO\n(PROBLEMATICO)",
     hjust = 0, vjust = 0,
     size = 4,
     color = "#e67e22",
@@ -405,11 +415,11 @@ plot_clusters_clean <- ggplot(titulaciones_clustered, aes(
   scale_y_continuous(labels = scales::percent) +
   labs(
     title = "Matriz de Posicionamiento de Titulaciones: 4 Cuadrantes",
-    subtitle = "Clasificación según Tasa de Rendimiento y Abandono (medianas como punto de corte)",
+    subtitle = "Clasificacion segun Tasa de Rendimiento y Abandono (medianas como punto de corte)",
     x = "Tasa de Rendimiento",
     y = "Tasa de Abandono",
-    color = "Clúster",
-    fill = "Clúster"
+    color = "Cluster",
+    fill = "Cluster"
   ) +
   theme_minimal() +
   theme(
