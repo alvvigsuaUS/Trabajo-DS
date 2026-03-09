@@ -165,10 +165,10 @@ ggplot(elbow_df, aes(x = k, y = wss)) +
   )
 ```
 
-# 4.1 Análisis de Silhueta
+# 4.1 Análisis de Silhouette
 
 ```{r silhouette_analysis, fig.align='center'}
-# Análisis de silhueta para k = 2 a 6
+# Análisis de Silhouette para k = 2 a 6
 silhouette_scores <- sapply(2:6, function(k) {
   km <- kmeans(features_normalized, k, nstart = 10)
   sil <- silhouette(km$cluster, dist(features_normalized))
@@ -184,9 +184,9 @@ ggplot(sil_df, aes(x = k, y = silhouette)) +
   geom_line(color = "#e74c3c", size = 1) +
   geom_point(color = "#e74c3c", size = 3) +
   labs(
-    title = "Análisis de Silhueta: Calidad de la Partición",
+    title = "Análisis de Silhouette: Calidad de la Partición",
     x = "Número de Clústeres (k)",
-    y = "Coeficiente de Silhueta"
+    y = "Coeficiente de Silhouette"
   ) +
   theme_minimal() +
   theme(
@@ -195,7 +195,7 @@ ggplot(sil_df, aes(x = k, y = silhouette)) +
     panel.grid.major = element_line(color = "gray90")
   )
 
-cat("Scores de Silhueta:\n")
+cat("Scores de Silhouette:\n")
 print(sil_df)
 
 cat("\n")
@@ -438,7 +438,7 @@ Una pregunta importante surge al observar que el algoritmo K-means frecuentement
 
 ## ¿Qué significa si K-means elige 2 clusters?
 
-Si el análisis de silhueta determina que **k=2 es óptimo**, esto generalmente indica:
+Si el análisis de Silhouette determina que **k=2 es óptimo**, esto generalmente indica:
 
 1.  **Dicotomía Principal**: Existe una división fundamental en las titulaciones:
 
@@ -511,7 +511,7 @@ for (c in 1:k_optimal) {
 ```{r clustering_quality}
 # Calcular métricas de calidad
 silhouette_coef <- silhouette(kmeans_result$cluster, dist(features_normalized))
-cat("Coeficiente de Silhueta Global:", 
+cat("Coeficiente de Silhouette Global:", 
     round(mean(silhouette_coef[, "sil_width"]), 4), "\n\n")
 
 # Davies-Bouldin Index (menor es mejor)
@@ -696,7 +696,7 @@ cat("   • Permite identificación de titulaciones en riesgo\n")
 cat("   • Facilita diseño de intervenciones personalizadas\n")
 
 cat("4. CALIDAD DEL MODELO:\n")
-cat(sprintf("   • Coeficiente de Silhueta: %.4f\n", mean(silhouette_coef[, "sil_width"])))
+cat(sprintf("   • Coeficiente de Silhouette: %.4f\n", mean(silhouette_coef[, "sil_width"])))
 cat("   • Separación: Aceptable\n")
 cat("   • Coherencia interna: Buena\n")
 ```
