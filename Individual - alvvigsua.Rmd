@@ -1,6 +1,8 @@
 ---
 title: "Evolucion_temporal_del_rendimiento"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 # Carga de librerias necesarias
@@ -104,7 +106,7 @@ Si vemos las graficas de rendimiento por rama del conocimiento podemos ver que i
 
 Quitando la de ciencias, el resto de ramas siguen una tendencia similar antes y despues de ese año, lo que indica que el impacto que produjo fue solo temporal.
 
-También, el descenso progresivo en las ramas de Ciencias Sociales y Artes Y Humanidades puede deberse a la suma del incremento del deterioro de la salud mental de los estudiantes y el hecho de que son grados muy poco demandados, lo que provoca que se tiendan a llenar con alumnos con un menor compromiso y dedicación. Si a eso le sumamos también, que los grados de ciencias, ciencias de la salud e ingenierias han aumentado las notas de corte con los años este efecto se refuerza.
+También, el descenso progresivo en las ramas de Ciencias Sociales y Artes Y Humanidades puede deberse a el hecho de que son grados muy poco demandados, lo que provoca que se tiendan a llenar con alumnos con un menor compromiso y dedicación. Si a eso le sumamos también, que los grados de ciencias, ciencias de la salud e ingenierias han aumentado las notas de corte con los años este efecto puede reforzarse.
 
 ```{r}
 ggplot(df_abandono_rendimiento_rama %>% filter(Rama_Conocimiento == "Ciencias"), 
@@ -119,7 +121,7 @@ ggplot(df_abandono_rendimiento_rama %>% filter(Rama_Conocimiento == "Ciencias"),
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-En cuanto a esta caida en los grados de ciencias, puede deberse a que estos grados son los más exigentes de todos, haciendo que la diferencia entre la evaluacion covid y la vuelta a la normalidad sea muy grande, sumado a que es probable que entrase más alumnos en esos grados gracias al modelo COVID de la PAU
+En cuanto a esta caida en los grados de ciencias, puede deberse a que estos grados son los más exigentes de todos, haciendo que la diferencia entre la evaluacion covid y la vuelta a la normalidad sea muy grande, sumado a que es probable que entrase más alumnos en esos grados gracias al modelo COVID de la PAU, lo que provocaría que el rendimiento medio bajase al haber más alumnos con un perfil más bajo.
 
 
 ```{r}
@@ -178,7 +180,17 @@ En cuanto a las ramas de Artes y Humanidades es alto y con una tendencia crecien
 En cuanto a las ingenierías, es probable que este efecto se refuerce por el aumento de las formaciones profesionales en estas áreas.
 
 
+# Conclusiones
 
+En cuanto a la evolución temporal del rendimiento y abandono por rama del conocimiento, se puede ver que el evento del COVID provocó un aumento puntual del rendimiento en todas las ramas, menos en la de ciencias donde parece que se mantiene la tendencia y luego se produce un gran descenso.
+
+Quitando la de ciencias, el resto de ramas siguen una tendencia similar antes y despues de ese año, lo que indica que el impacto que produjo fue solo temporal.
+
+La caida en los grados de ciencias, puede deberse a que estos grados son los más exigentes de todos, haciendo que la diferencia entre la evaluacion covid y la vuelta a la normalidad sea muy grande, sumado a que es probable que entrase más alumnos en esos grados gracias al modelo COVID de la PAU, lo que provocaría que el rendimiento medio bajase al haber más alumnos con un perfil más bajo.
+
+En cuanto al abandono, por lo general, el abandono en ciencias y ciencias de la salud es el menor de todos y es bastante constante.
+
+Cosa que en las ramas de Artes y Humanidades es alto y con una tendencia creciente, lo que puede deberse a que son grados poco demandados y con un perfil de estudiante con menor compromiso y dedicación, lo que provoca que se tiendan a llenar con alumnos con un menor compromiso y dedicación.
 
 
 

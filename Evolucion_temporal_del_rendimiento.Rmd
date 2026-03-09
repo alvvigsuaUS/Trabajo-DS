@@ -1,6 +1,14 @@
 ---
-title: "Evolucion_temporal_del_rendimiento"
-output: html_document
+title: "Evolución temporal del rendimiento y abandono"
+author: "Nombre Apellido – Grupo X"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: true
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
 ---
 
 # Carga de librerias necesarias
@@ -113,7 +121,12 @@ ggplot(df_evolucion_abandono_rendimiento, aes(x = Año)) +
 ```
 
 En esta grafica se puede ver la evolucion promedio general de todas las titulaciones a lo largo de los años de estudio.
-Con esta grafica solo se puede apreciar una correlacion negativa ya que cuando sube una la otra baja. Sin embargo, no se puede apreciar una relacion directa entre estas dos variables, ya que el rendimiento y el abandono pueden estar influenciados por muchos factores diferentes, como la calidad de la enseñanza, el apoyo académico, las circunstancias personales de los estudiantes, entre otros. Por lo tanto, aunque exista una correlacion negativa entre estas dos variables, no se puede concluir que una cause la otra.
+
+Con esta grafica solo se puede apreciar una correlacion negativa ya que cuando sube una la otra baja.
+
+Sin embargo, no se puede apreciar una relacion directa entre estas dos variables, ya que el rendimiento y el abandono pueden estar influenciados por muchos factores diferentes, como la calidad de la enseñanza, el apoyo académico, las circunstancias personales de los estudiantes, entre otros.
+
+Por lo tanto, aunque pueda existir una correlacion negativa entre estas dos variables, no se puede concluir que una cause la otra.
 
 
 ```{r}
@@ -161,7 +174,7 @@ ggplot(df_evolucion_abandono_rendimiento, aes(x = Año)) +
 
 En esta otra grafica, se pueden ver el número de matrículas que han formado parte de la estadística tanto para abandono como para rendimiento.
 
-Se puede ver claramente como el numero de matriculados en rendimiento es mucho mayor que el de abandono. Esto se puede deber a que en los datos de rendimiento se han contado el número de asignaturas matriculadas, mientras que en abandono solo se han contado las matrículas en la titulación.
+Se puede ver claramente como el numero de matriculados en rendimiento es mucho mayor que el de abandono. Esto se debe a que en los datos de rendimiento se han contado el número de asignaturas matriculadas, mientras que en abandono solo se han contado las matrículas en la titulación.
 
 ### Correlacion general
 
@@ -179,7 +192,9 @@ cor(df_evolucion_abandono_rendimiento$Tasa_Rendimiento_Promedio,
     method = "spearman")
 ```
 
-Aunque no haya una relaccion directa entre abandono y rendimiento se puede ver que existe una correlación negativa entre estas 2 variables, es decir, a mayor rendimiento promedio, menor abandono promedio. Esto se puede deber a que un mayor rendimiento puede motivar a los estudiantes a continuar sus estudios, mientras que un menor rendimiento puede llevar a la frustración y al abandono en los siguientes años.
+Aunque no haya una relaccion directa entre abandono y rendimiento se puede ver que existe una correlación negativa entre estas 2 variables, es decir, a mayor rendimiento promedio, menor abandono promedio. 
+
+Esto se puede deber a que un mayor rendimiento puede motivar a los estudiantes a continuar sus estudios, mientras que un menor rendimiento puede llevar a la frustración y al abandono en los siguientes años.
 
 # Pregunta Grupal: Evolución temporal del rendimiento y abandono
 
@@ -198,7 +213,7 @@ ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Rendimiento_Pro
   theme_minimal()
 ```
 
-Esta fluctuacion general del rendimiento esta claramente influenciada por el covid el caos académico que produjo suspender las clases presenciales y proceder con clases y evaluación online.
+Esta fluctuacion general del rendimiento esta claramente influenciada por el covid y el caos académico que produjo suspender las clases presenciales y proceder con clases y evaluación online.
 
 Eso produjo que las notas de los alumnos subieran ya que los profesores se vieron obligados a flexibilizar las evaluaciones lo que provocó un aumento del rendimiento durante ese año.
 
@@ -243,7 +258,7 @@ ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Rendimiento_Pro
 
 Si realizamos una interpolacion de los datos entre los años 2018_2019 y 2021_2022, se puede ver que el pico del año 2019_2020 no afectó a la tendencia del rendimiento, ya que la interpolacion sigue la tendencia general de los datos.
 
-También, si aumentamos la escala del eje Y para que empiece en 0 y podamos ver todo el rango de la variable el pico es pequeño.
+También, si aumentamos la escala del eje Y para que empiece en 0 y podamos ver todo el rango de la variable el pico es relativamente pequeño.
 
 #### Grafica con interpolacion y escala completa en el eje Y
 ```{r}
@@ -261,7 +276,24 @@ ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Rendimiento_Pro
   expand_limits(y = 1)
 ```
 
-Si nos centramos en los disitintos centros, se puede ver que el rendimiento de cada centro sigue una tendencia similar a la del rendimiento general, con un pico en el año 2019_2020 y una vuelta a la tendencia normal en los años siguientes. Esto indica que el impacto del covid en el rendimiento fue generalizado y afectó a todos los centros de manera similar.
+Ademas de usar la interpolacion, podemos usar el test estadistico Mann-Kendall para la tendencia real de la variable de rendimiento a lo largo del tiempo. Si el pico ha afectado este test nos deberia dar que no hay tendencia significativa en los datos.
+
+Las hipotesis serían:
+- H0: No existe tendencia en la serie temporal
+- H1: Existe una tendencia monotónica en la serie temporal
+
+Dado que el p-value es menor que 0.05, se rechaza la hipotesis nula, lo que indica que hay una tendencia significativa. Si vemos el valor tau -0.81 nos dice que es una tendencia decreciente muy fuerte pero no perfecta
+
+```{r}
+library(Kendall)
+
+mankendall <- MannKendall(df_evolucion_abandono_rendimiento$Tasa_Rendimiento_Promedio)
+mankendall
+```
+
+Si nos centramos en los disitintos centros, se puede ver que el rendimiento de cada centro sigue una tendencia similar a la del rendimiento general, con un pico en el año 2019_2020 y una vuelta a la tendencia normal en los años siguientes. 
+
+Esto nos indica que el impacto del covid en el rendimiento fue generalizado y afectó a todos los centros de manera similar.
 
 #### Grafica de rendimiento por centro
 ```{r}
@@ -318,43 +350,6 @@ ggplot(df_evolucion_centro_diff %>% filter(Año == "2019_2020"), aes(x = reorder
 ggsave("images/grafica_diferencia_rendimiento_centros_19_20.png", width = 8, height = 6, dpi = 300)
 ```
 
-Y segun la titulación
-
-#### Grafica de diferencia de rendimiento entre el año 2018_2019 y el año 2019_2020 por titulacion
-```{r}
-df_evolucion_titulacion = df_abandono_rendimiento %>%
-  group_by(Año, Cod_Titulacion) %>%
-  summarise(Tasa_Rendimiento_Promedio = mean(Tasa_Rendimiento),
-            Tasa_Abandono_Promedio = mean(Tasa_Abandono),
-            Cod_Centro = Cod_Centro)
-
-df_evolucion_titulacion = df_evolucion_titulacion %>%
-  left_join(df_codigo_centro, by = c("Cod_Centro" = "Cod_Centro"))
-
-
-df_evolucion_titulacion <- df_evolucion_titulacion %>%
-  left_join(df_codigo_titulacion, by = c("Cod_Titulacion" = "Cod_Titulacion"))
-
-df_evolucion_titulacion_diff <- df_evolucion_titulacion %>%
-  group_by(Cod_Titulacion) %>%
-  mutate(Diferencia_Rendimiento = Tasa_Rendimiento_Promedio - lag(Tasa_Rendimiento_Promedio))
-
-ggplot(df_evolucion_titulacion_diff %>% 
-         filter(Año == "2019_2020"), 
-       aes(x = reorder(Titulacion, Diferencia_Rendimiento), 
-           y = Diferencia_Rendimiento, 
-           fill = Nombre_Centro)) +
-  geom_bar(stat = "identity") +
-  labs(title = "Desviación de rendimiento en 2019_2020",
-       x = "Titulación",
-       y = "Diferencia de Rendimiento",
-       fill = "Centro") +
-  theme_minimal() +
-  coord_flip()
-
-ggsave("images/grafica_diferencia_rendimiento_titulaciones.png", width = 20, height = 15, dpi = 400)
-```
-
 Si vemos los datos de diferencia de centros en otros años antes y despues del COVID, como los años 2018_2019 y 2021_2022.
 
 #### Grafica de diferencia de rendimiento entre el año 2017_2018 y el año 2018_2019 por centro
@@ -399,6 +394,8 @@ ggsave("images/grafica_diferencia_rendimiento_centros_21_22.png", width = 8, hei
 
 También, dos años después del COVID, en el año 2021_2022, se puede ver como la mayoría de centros tienden a disminuir el rendimiento, aunque, a diferencia que el año anterior al COVID, en este año las diferencia han notablemente mayores, probablemente a causa del periodo de adaptación.
 
+Esto tambien se puede comprobar viendo las tendencias generales de los centros.
+
 #### Grafica de diferencia de rendimiento entre el año 2020_2021 y el año 2021_2022 por centro
 ```{r}
 df_evolucion_centro_diff <- df_evolucion_centro %>%
@@ -439,7 +436,9 @@ ggplot(df_evolucion_centro_diff %>% filter(Año %in% c("2018_2019", "2019_2020",
 ggsave("images/grafica_diferencia_rendimiento_centros_parallel.png", width = 15, height = 6, dpi = 300)
 ```
 
-Grafica pensada para la presentacion donde se recogen todas las anteriores perdiendo la ventaja de los graficos de barras
+Con esta gráfica vemos las diferencias a lo largo de los años juntas en vez de separarlas en un grafico de barras.
+
+Además en esta gráfica se puede ver mejor como afectó a los centros de manera distinta ya que se puede ver claramente que la dispersión aumenta durante esos años.
 
 ## Estudio del abandono
 
@@ -457,7 +456,13 @@ ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Abandono_Promed
        y = "Tasa de Abandono Promedio") +
   theme_minimal()
 ```
-Una cosa clara que vimos al principio es la correlación negativa entre el rendimiento y el abandono. Esto nos dice que el abandono y el rendimiento estan ligados.
+Una cosa clara que vimos al principio es la correlación negativa entre el rendimiento y el abandono. Esto nos dice que el abandono y el rendimiento estan ligados de cierta manera.
+
+```{r}
+mankendall <- MannKendall(df_evolucion_abandono_rendimiento$Tasa_Abandono_Promedio)
+mankendall
+```
+Por otro lado, el test estadístico nos dice que los datos no siguen tendencia por lo que se puede tomar como un dato al azar.
 
 #### Grafica de rendimiento y abandono general
 ```{r}
@@ -491,7 +496,11 @@ ggplot(df_evolucion_abandono_rendimiento, aes(x = Año)) +
     axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-A pesar de haber una correlación entre estas variables, no se puede saber con certeza si una influencia a la otra. No obstante, esta claro que esta relación no es casualidad ya que si un estudiante abandona suele no completar sus creditos, por lo que si el rendimiento baja, sube el abandono. Esto puede ocurrir tambien al contrario, si un estudiante tiene un rendimiento bajo, se plantee abandonar.
+A pesar de haber una correlación entre estas variables, no se puede saber con certeza si una influencia a la otra. 
+
+No obstante, esta claro que esta relación no es casualidad ya que si un estudiante abandona suele no completar sus creditos, por lo que si el rendimiento baja, sube el abandono. 
+
+Esto puede ocurrir tambien al contrario, si un estudiante tiene un rendimiento bajo, se plantee abandonar.
 
 #### Grafica de rendimiento por centro
 ```{r}
@@ -532,7 +541,7 @@ ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Abandono_Promed
   theme_minimal()
 ```
 
-Si volvemos a la gráfica anterior, se puede ver una bajada del rendimiento durante los años 2019_2020 y 2020_2021, una posible causa de esto se puede deber al aumento de rendimiento durante esos años, que causó que los estudiantes superaran alguna asignatura dificil y decidieran contituar con la titulación.
+Si volvemos a la gráfica anterior, se puede ver una bajada del abandono durante los años 2019_2020 y 2020_2021, una posible causa de esto se puede deber al aumento de rendimiento durante esos años, que causó que los estudiantes superaran alguna asignatura dificil y decidieran contituar con la titulación.
 
 #### Grafica de diferencia de abandono entre el año 2018_2019 y el año 2019_2020 por centro 
 ```{r}
@@ -577,6 +586,8 @@ ggsave("images/grafica_diferencia_abandono_centros_19_20.png", width = 8, height
 ```
 Un claro ejemplo es la facultad de matemáticas, que en el año 2018_2019 fue el centro con mayor aumento de abandono y en 2019_2020 ha pasado a ser el centro con mayor disminucion de abandono.
 
+También hay que destacar que los centros donde se cursan las titulaciones más dificiles son los que más han conseguido reducir el abandono en el 2019_2020 (esto incluye tambien a los dos años siguientes) lo que nos dice de forma indirecta que este evento provoco que los estudiantes fueran capaz de seguir con el grado gracias a quitarse asignaturas difíciles.
+
 #### Grafica de diferencia de abandono entre el año 2019_2020 y el año 2020_2021 por centro 
 ```{r}
 df_evolucion_centro_diff <- df_evolucion_centro %>%
@@ -599,6 +610,8 @@ ggsave("images/grafica_diferencia_abandono_centros_20_21.png", width = 8, height
 
 En el segundo año se puede ver que algunas de las anteriores siguen reduciendo el rendmiento y otras que anteriormente lo aumentaron lo han reducido en este año. Esto se puede deber a las 2 etapas de covid donde en la anterior fué el confinamiento y en la posterior se tuvo un periodo de adaptación donde las clases aparentaban mas sencillas.
 
+Además es posible que el efecto anteriormente descrito perdure algún año más por la condicion temporal de los datos.
+
 #### Grafica de diferencia de abandono entre el año 2020_2021 y el año 2021_2022 por centro 
 ```{r}
 df_evolucion_centro_diff <- df_evolucion_centro %>%
@@ -619,123 +632,69 @@ ggplot(df_evolucion_centro_diff %>% filter(Año == "2021_2022"), aes(x = reorder
 ggsave("images/grafica_diferencia_abandono_centros_21_22.png", width = 8, height = 6, dpi = 300)
 ```
 
-# Pregunta Individual: Evolución temporal del rendimiento y abandono por rama del conocimiento
+Finalmente en el año 2021_2022 se puede ver como la mayoría de centros tienden a aumentar el abandono, aunque, a diferencia que el año anterior al COVID, en este año las diferencia han notablemente mayores.
 
+Una posible causa de este abandono es el aumento de las Formaciones profesionales, que han aumentado su oferta y calidad durante los últimos años, lo que ha provocado que algunos estudiantes que antes se matriculaban en la universidad, ahora se matriculen en una formación profesional.
 
-```{r}
-df_abandono_rendimiento_rama = df_abandono_rendimiento %>%
-  left_join(df_codigo_titulacion, by = c("Cod_Titulacion" = "Cod_Titulacion")) %>%
-  group_by(Año, Rama_Conocimiento) %>%
-  summarise(Tasa_Rendimiento_Promedio = mean(Tasa_Rendimiento),
-            Tasa_Abandono_Promedio = mean(Tasa_Abandono))
-df_abandono_rendimiento_rama
-```
-
-Agrupamos las titulaciones por rama del conocimiento para ver como ha evolucionado en abandono y el rendimiento en las distintas ramas del conocimiento.
-
-
-## Estudio del rendimiento
+Haciendo que estudiantes abandonen su grado por una formacion profesional o no se matriculen en la universidad por matricularse en una formacion profesional, lo que ha provocado un aumento del abandono.
 
 ```{r}
-ggplot(df_abandono_rendimiento_rama, aes(x = Año, y = Tasa_Rendimiento_Promedio, color = Rama_Conocimiento)) +
-  geom_vline(xintercept = "2019_2020", color = "red", linetype = "solid", linewidth = 1, alpha = 0.5) +
-  geom_line(group = 1) +
-  geom_point() +
-  labs(title = "Evolución Temporal del Rendimiento Promedio por Rama Conocimiento",
-       x = "Año",
-       y = "Tasa de Rendimiento Promedio") +
+
+rango_mat_rendimiento <- range(df_evolucion_abandono_rendimiento$Matriculados_Rendimiento, na.rm = TRUE)
+rango_mat_abandono <- range(df_evolucion_abandono_rendimiento$Matriculados_Abandono, na.rm = TRUE)
+
+factor_conversion <- (rango_mat_rendimiento[2] - rango_mat_rendimiento[1]) / 
+                     (rango_mat_abandono[2] - rango_mat_abandono[1])
+
+# 3. Creación del gráfico
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año)) +
+  
+  # Capas para Matriculados_Rendimiento (Eje principal - izquierdo)
+  geom_line(aes(y = Matriculados_Rendimiento, color = "Rendimiento"), group = 1) +
+  geom_point(aes(y = Matriculados_Rendimiento, color = "Rendimiento"), color = "red") +
+  
+  # Capas para Matriculados_Abandono (Eje secundario - transformado)
+  geom_line(aes(y = (Matriculados_Abandono - rango_mat_abandono[1]) * factor_conversion + rango_mat_rendimiento[1], 
+                color = "Abandono"), group = 1) +
+  geom_point(aes(y = (Matriculados_Abandono - rango_mat_abandono[1]) * factor_conversion + rango_mat_rendimiento[1], 
+                 color = "Abandono"), color = "blue") +
+  
+  # Escalas y configuración de ambos ejes Y
+  scale_y_continuous(
+    name = "Matriculados con Rendimiento",
+    limits = rango_mat_rendimiento,
+    sec.axis = sec_axis(
+      trans = ~(. - rango_mat_rendimiento[1]) / factor_conversion + rango_mat_abandono[1],
+      name = "Matriculados con Abandono"
+    )
+  ) +
+  
+  # Etiquetas, colores y tema
+  labs(title = "Evolución Temporal de Matriculados: Rendimiento y Abandono",
+       x = "Año") +
+  scale_color_manual(values = c("Rendimiento" = "red", "Abandono" = "blue")) +
   theme_minimal() +
-  theme(legend.title = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1))+
-  facet_wrap(~Rama_Conocimiento, ncol = 2)
+  theme(
+    legend.title = element_blank(),
+    legend.position = "bottom", # Añadido opcional para que la leyenda no quite espacio lateral
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
-Si vemos las graficas de rendimiento por rama del conocimiento podemos ver que idependientemente de la tendencia de cada rama, se puede ver como el evento del COVID provocó un aumento puntual del rendimiento en todas las ramas, menos en la de ciencias donde parece que se mantiene la tendencia y luego se produce un gran descenso.
-
-Quitando la de ciencias, el resto de ramas siguen una tendencia similar antes y despues de ese año, lo que indica que el impacto que produjo fue solo temporal.
-
-También, el descenso progresivo en las ramas de Ciencias Sociales y Artes Y Humanidades puede deberse a la suma del incremento del deterioro de la salud mental de los estudiantes y el hecho de que son grados muy poco demandados, lo que provoca que se tiendan a llenar con alumnos con un menor compromiso y dedicación. Si a eso le sumamos también, que los grados de ciencias, ciencias de la salud e ingenierias han aumentado las notas de corte con los años este efecto se refuerza.
-
-```{r}
-ggplot(df_abandono_rendimiento_rama %>% filter(Rama_Conocimiento == "Ciencias"), 
-       aes(x = Año, y = Tasa_Rendimiento_Promedio)) +
-  geom_vline(xintercept = "2019_2020", color = "red", linetype = "solid", linewidth = 1, alpha = 0.5) +
-  geom_line(group = 1, color = "#A3A500", linewidth = 1) +
-  geom_point(color = "#A3A500", size = 3) +
-  labs(title = "Evolución Temporal del Rendimiento Promedio - Ciencias",
-       x = "Año",
-       y = "Tasa de Rendimiento Promedio") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-En cuanto a esta caida en los grados de ciencias, puede deberse a que estos grados son los más exigentes de todos, haciendo que la diferencia entre la evaluacion covid y la vuelta a la normalidad sea muy grande, sumado a que es probable que entrase más alumnos en esos grados gracias al modelo COVID de la PAU
+Viendo ahora la gráfica de las matriculas que han participado en este estudio se pueden ver como se ha ido reduciendo poco a poco el numero de matrículas, lo que refuerza la hipotesis del abandono de las universidades.
 
 
-```{r}
-df_abandono_rendimiento_rama_ciencias = df_abandono_rendimiento %>%
-  left_join(df_codigo_titulacion, by = c("Cod_Titulacion" = "Cod_Titulacion")) %>%
-  group_by(Año) %>%
-  filter(Rama_Conocimiento == "Ciencias") %>%
-  summarise(Titulacion = Titulacion.y,
-            Rama_Conocimiento = Rama_Conocimiento,
-            Tasa_Rendimiento_Promedio = Tasa_Rendimiento,
-            Tasa_Abandono_Promedio = Tasa_Abandono
-            )
+# Conclusiones
 
-ggplot(df_abandono_rendimiento_rama_ciencias, aes(x = Año, y = Tasa_Rendimiento_Promedio, color = Titulacion)) +
-  geom_vline(xintercept = "2019_2020", color = "red", linetype = "solid", linewidth = 1, alpha = 0.5) +
-  geom_line(group = 1) +
-  geom_point() +
-  labs(title = "Evolución Temporal del Rendimiento Promedio para Ciencias",
-       x = "Año",
-       y = "Tasa de Rendimiento Promedio") +
-  theme_minimal() +
-  theme(legend.title = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1))+
-  facet_wrap(~Titulacion, ncol = 2)
+Finalmente tras el estudio del rendimiento y el abandono a pesar de la falta de datos sólidos para  poder sacar conclusiones claras, se pueden sacar conclusiones interesantes.
 
-ggsave("images/grafica_rendimiento_ciencias.png", width = 11, height = 6, dpi = 300)
-```
+El evento más claro que se puede detectar en los datos es el impacto del COVID en el rendimiento y el abandono, donde se puede ver claramente un aumento del rendimiento durante el año 2019_2020 y una reducción del abandono durante los años 2019_2020 y 2020_2021, posible mente causada por la facilidades y la flexibilidad en las evaluaciones durante esta época.
 
-Si nos centramos en la rama de ciencias, se puede ver que el descenso del rendimiento se debe en parte a una caida tras la subida del COVID, aunque la principal razón de este descenso está en los másters, concretamente en los Máster en Ciencia y Tecnología de Nuevos Materiales y Máster en Física Nuclear.
+También se puede ver un aumento en el abandono pasado el covid que se puede explicar por el exito de las formaciones profesionales que han causado un abandono de las universidades.
 
-No se han encontrado datos sobre estos másters que lleven a darnos una idea de que ha podido pasar concretamente. Una posible causa es que estos sean los más complicados de todos, haciendo que el contrasete de evaluación se note mucho. Esto solo se aplicaría al máster Máster en Ciencia y Tecnología de Nuevos Materiales ya que tiene una tendencia más estable. Por otro lado el de Física nuclear tiene una tendencia más inestable por lo que no podríamos decir nada con seguridad.
+Por otro lado tambien se puede ver que estos eventos, y otros muchos que no se han podido detectar, afectan de forma distinta a cada centro, lo que hace que cada centro tenga una tendencia diferente, aunque en general todos los centros siguen una tendencia similar a la del rendimiento y abandono general.
 
-
-## Estudio del abandono
-
-
-```{r}
-ggplot(df_abandono_rendimiento_rama, aes(x = Año, y = Tasa_Abandono_Promedio, color = Rama_Conocimiento)) +
-  geom_line(group = 1) +
-  geom_point() +
-  labs(title = "Evolución Temporal del Abandono Promedio por Rama Conocimiento",
-       x = "Año",
-       y = "Tasa de Abandono Promedio") +
-  theme_minimal() +
-  theme(legend.title = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1))+
-  facet_wrap(~Rama_Conocimiento, ncol = 2)
-```
-
-En cuanto al abanono no es tan sencillo analizar patrones debido a esa caracteristica temporal de los datos (el abandono de un año significa que esa proporcion de estudiantes no se han matricualdo en la misma titulacion en los dos años posteriores)
-
-Por lo general, el abandono en ciencias y ciencias de la salud es el menor de todos y es bastante constante.
-
-En cuanto a las ramas de Artes y Humanidades es alto y con una tendencia creciente, lo que puede deberse a que son grados poco demandados y con un perfil de estudiante con menor compromiso y dedicación, lo que provoca que se tiendan a llenar con alumnos con un menor compromiso y dedicación
-
-En cuanto a las ingenierías, es probable que este efecto se refuerce por el aumento de las formaciones profesionales en estas áreas.
-
-
-
-
-
-
-
-
-
-
+Tambén el echo de tener pocos años ha hecho que no se puedan detectar tendencias a largo plazo, además de que ha faltado tiempo para analizar todas y cada una de las titulaciones de forma individual.
 
 
 
