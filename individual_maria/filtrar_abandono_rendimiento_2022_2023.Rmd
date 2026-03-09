@@ -3,6 +3,65 @@ title: "Filtrar dataset 2022_2023"
 output: html_document
 ---
 
+## Extracción de Datos de PDFs: Proceso y Tecnologías Utilizadas
+
+### Contexto del Desafío
+
+La información necesaria para este análisis se encontraba inicialmente en archivos PDF con formatos complejos, tablas y estructuras de datos no uniformes. La extracción de esta información de manera precisa y automatizada representó uno de los mayores desafíos técnicos del proyecto.
+
+### Tecnologías y Herramientas Probadas
+
+Durante el desarrollo del proyecto, se evaluaron múltiples tecnologías y enfoques para la extracción de datos de los PDFs:
+
+#### 1. **Tesseract OCR**
+Se intentó utilizar Tesseract, un motor de reconocimiento óptico de caracteres (OCR) de código abierto. Aunque Tesseract es efectivo para documentos escaneados, presentó limitaciones significativas:
+- Dificultad para reconocer estructuras tabulares complejas
+- Errores en la interpretación de números y caracteres especiales
+- Problemas con la alineación de columnas y filas en las tablas
+- Requería preprocesamiento extenso de las imágenes
+
+#### 2. **Herramientas de OCR Tradicionales**
+Se probaron diversas herramientas de OCR comerciales y de código abierto:
+- Adobe Acrobat Pro DC para exportación a Excel
+- PDFTables y Tabula para extracción automática de tablas
+- Python con bibliotecas como pdfplumber, PyPDF2 y camelot-py
+
+Estas herramientas mostraron resultados inconsistentes, especialmente por:
+- PDFs que contienen tablas con formato imagen
+- Celdas combinadas y estructuras jerárquicas
+- Caracteres especiales y acentos en español
+
+#### 3. **Funcionalidad de Excel (Power Query)**
+Se exploró la funcionalidad integrada de Excel para importar datos desde PDFs:
+- Power Query permitía cierta automatización
+- Sin embargo, requería ajustes manuales significativos para cada PDF
+- La precisión era variable y dependía de la estructura del PDF original
+- No escalable para procesar múltiples archivos de manera eficiente
+
+### Solución Final: Google Gemini AI
+
+**Después de evaluar todas las opciones anteriores, la solución más exitosa fue utilizar Google Gemini AI** para la extracción de datos de los PDFs. Esta aproximación basada en inteligencia artificial generativa demostró ser superior por las siguientes razones:
+
+- **Comprensión contextual**: Gemini pudo entender la estructura semántica de las tablas, no solo el texto literal
+- **Manejo de formatos complejos**: Gestionó eficazmente PDFs con tablas irregulares, celdas combinadas y múltiples formatos
+- **Precisión mejorada**: Menor tasa de errores en la transcripción de datos numéricos y texto
+- **Adaptabilidad**: No requirió ajustes específicos para cada tipo de documento
+- **Eficiencia**: Redujo significativamente el tiempo de procesamiento y validación manual
+
+La estrategia implementada con Gemini consistió en:
+1. Subir los PDFs directamente a la plataforma de Gemini
+2. Solicitar la extracción estructurada de datos en formato CSV o tabular
+3. Validar y limpiar los datos extraídos
+4. Integrar los resultados en el pipeline de análisis
+
+Esta aproximación permitió obtener datasets limpios y estructurados con mínima intervención manual, estableciendo una base sólida para el análisis posterior.
+
+---
+
+## Procesamiento de Datos
+
+Una vez extraídos los datos mediante Gemini AI, el siguiente paso fue el filtrado y procesamiento de los datasets para el análisis específico del curso 2022-2023.
+
 ```{r}
 # Ruta del archivo de entrada
 input_path <- "C:/Users/User/Downloads/ds/Trabajo-DS/data/dataset_abandono_rendimiento_estricto.csv"
