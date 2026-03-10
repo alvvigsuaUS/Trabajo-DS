@@ -1,0 +1,253 @@
+---
+title: "Prediccion del la tasa de superacion"
+output: html_document
+date: "2026-03-08"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Predicción de la Tasa de Superación
+
+El objetivo de este apartado es evaluar la viabilidad de anticipar el éxito académico a nivel de asignatura mediante la aplicación de algoritmos de Machine Learning.
+
+Específicamente, buscaremos predecir la Tasa de Superación (porcentaje de alumnos que superan la asignatura respecto al total de matriculados). Para anticipar este indicador realizaremos un análisis de correlaciones, una selección de variables predictoras viables y, finalmente, el entrenamiento y evaluación comparativa de distintos modelos de regresión supervisada. Trataremos de predecir a nivel de asignatura el éxito académico en la Univeridad de Sevilla, pero a la hora de valorar los resultados debemos considerar que para algunas asignaturas troncales contamos con muchas muestras, mientras que para otras más específicas solo tendremos ejemplos limitados a una única titulación.
+
+## Librerías
+```{r}
+library(tidyverse)
+library(readxl)
+library(stringr)
+library(reshape2)
+library(dplyr)
+library(caret)
+library(rpart)
+library(xgboost)
+```
+
+## Carga de datos y generación del dataset final
+
+Para la construcción de los modelos predictivos, se ha empleado el registro histórico oficial de calificaciones de la Universidad de Sevilla, abarcando desde el curso 2017-2018 hasta el 2023-2024. Contamos con variables contextuales como lo son el centro, la titulación o la asignatura y variables relacionadas con el volumen y rendimiento, como los matriculados, no presentados a examen, cantidad de sobresalientes etc. La variable objetivo es la tasa de superación (Tasa SUPERA/MAT) que corresponde al cociente entre el Nº que superan y el Nº matriculados.
+```{r}
+setwd("C:/Users/juanr/OneDrive/Escritorio/Máster/DS/Poyecto")
+```
+
+
+```{r}
+df_aprobados <- read_excel("matriculado_aprobado17_24.xls")
+head(df_aprobados)
+```
+
+A la hora de plantear cualquier modelo predictivo con este conjunto de datos, debemos valorar cual es la información que podemos emplear para la misma y así evitar Data Leakage. Teniendo en cuenta que pretendemos predecir la tasa de superación, no podremos emplear para la predicción información relativa a si la asignatura ha sido o no superada, información tal como el número de sobresalientes o de notables, ya que son variables cuyo valor se genera después de la evaluación, por tanto las columnas con las que trataremos serán las relativas al centro, título, nombre de la asignatura, número de matriculados, número de presentados, número de no presentados y el curso.
+Otro punto a tener en cuenta es que prescindiremos de los datos referentes a Máster, ya que sus asignaturas son específicas y los resultados presumiblemente diferentes a los de los grados, es por ello que los eliminaremos del dataset.
+```{r}
+df <- df_aprobados %>%
+  rename_with(~ str_replace_all(., " ", "_")) %>%
+  filter(!str_detect(tolower(Nombre_Título), "master|máster")) %>%
+  select(-Nº_que_superan, -Nº_de_MH, -Nº_de_SOB, -Nº_de_NOT, -Nº_de_APR, -Nº_de_suspensos) %>%
+  filter(!is.na(`Tasa_SUPERA/MAT`))
+
+head(df)
+```
+
+Tal y como se justificó previamente, se eliminaron del dataset todas las columnas que representan información posterior a la evaluación, además de las filas correspondientes a Másters. Concretamente, se purgaron las variables: Nº que superan, Nº de MH, Nº de SOB, Nº de NOT, Nº de APR y Nº de suspensos y las filas que contuviesen la palabra "Máster" en la columna Nombre Título.
+
+### Matriz de Correlación
+
+El éxito de los algoritmos depende de la calidad y relevancia de los datos con los que los entrenemos, por tanto, antes de dividir el dataset y entrenar los modelos, construiremos una matriz de correlación sobre las variables numéricas disponibles. Este paso previo nos permite medir la fuerza y la dirección de la relación lineal entre las posibles variables predictoras y nuestra variable clasificatoria.
+Construiremos esta matriz para las 3 variables numéricas que conservamos tras el procesamiento de los datos.
+```{r}
+datos_num <- df %>%
+  select(`Tasa_SUPERA/MAT`, Nº_matriculados, Nº_presentados, Nº_no_presentados)
+
+matriz_corr <- cor(datos_num, use = "complete.obs")
+matriz_melt <- melt(matriz_corr)
+
+ggplot(matriz_melt, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile(color = "white") +
+  # Configuramos la escala de colores: Rojo (negativo), Blanco (cero), Verde (positivo)
+  scale_fill_gradient2(low = "orange", high = "darkred", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), name="Pearson") +
+  # Imprimimos los valores exactos sobre los cuadrados
+  geom_text(aes(label = round(value, 3)), color = "black", size = 5, fontface = "bold") +
+  theme_minimal() +
+  labs(title = "Matriz de Correlaciones con la Tasa de Superación",
+       x = "", y = "") +
+  theme(axis.text.x = element_text(angle = 15, hjust = 1, face = "bold", size = 10),
+        axis.text.y = element_text(face = "bold", size = 11))
+```
+
+Observando la matriz podemos llegar a la conclusión de que la correlación entre las variables numéricas con la tasa de superación es en general baja. Para el caso de número de presentados es prácticamente nula, por lo que excluiremos esta información a la hora de realizar la predicción. El volumen total de matriculados apenas alcanza el -0.186, esto se traduce en una correlación muy baja, aunque el signo negativo sugiere una ligerísima tendencia a que las asignaturas más masificadas tengan peores tasas de aprobado. Por último, el volumen de alumnos que deciden no asistir al examen es la única variable que muestra una relación moderada (-0.425) con la superación. Esta correlación inversa indica que las asignaturas que acumulan no presentados tienden a ser aquellas con peores tasas de superación.
+Estas conclusiones nos dejan con 2 posibilidades, realizar una predicción únicamente basada en el número de no presentados como puede ser una regresión lineal, o explorar métodos de predicción que empleen a su vez variables categóricas como la asignatura, el centro o la titulación.
+
+## Regresión Lineal
+
+Pese a que únicamente tenemos una correlación moderada para la variable de no presentados, antes de pasar a modelos más sofisticados evaluaremos un modelo de regresión linal simple para ver que resultados obtenemos y compararlos posteriormente con otros métodos.
+```{r}
+df_reg <- df %>%
+  select(`Tasa_SUPERA/MAT`, Nº_no_presentados) %>%
+  na.omit()
+
+set.seed(123)
+train <- createDataPartition(df_reg$`Tasa_SUPERA/MAT`, p = 0.8, list = FALSE)
+pred_train <- df_reg[train, ]
+pred_test  <- df_reg[-train, ]
+
+modelo_reg <- lm(`Tasa_SUPERA/MAT` ~ Nº_no_presentados, data = pred_train)
+
+pred_reg <- predict(modelo_reg, pred_test)
+
+print(paste("RMSE:", RMSE(pred_reg, pred_test$`Tasa_SUPERA/MAT`)))
+print(paste("R-cuadrado:", R2(pred_reg, pred_test$`Tasa_SUPERA/MAT`)))
+```
+
+Tras evaluar las predicciones del modelo sobre el conjunto de test, los resultados son los siguientes: El coeficiente de determinación obtiene un valor de 0.1871, esto nos indica que el modelo apenas es capaz de explicar un 18.7% de las variaciones en las tasas de aprobados. Más del 81% de lo que determina la clasificación es puramente aleatorio si nos basamos en este modelo. El error cuadrático medio (0.2023) significa que el modelo se equivoca en un 20.2%. Un margen de error alto para que el modelo sea útil, por tanto pasaremos a continuación a trabajar con otros modelos predictivos.
+
+
+## Árbol de Decisión
+
+Ante las limitaciones de la regresión lineal, se procedió a entrenar un algoritmo que pudiese de procesar variables categóricas y que así interviniesen mayor cantidad de variables en pos de una mejor predicción, es por ello que implementaremos un árbol de decisión, el cual será entrenado con el dataset completo.
+
+```{r}
+df_arbol <- df %>%
+  select(`Tasa_SUPERA/MAT`, Nº_matriculados, Nº_presentados, Nº_no_presentados, 
+         Centro, Nombre_Título, Curso) %>%
+  na.omit() %>%
+  mutate(across(c(Centro, Nombre_Título, Curso), as.factor))
+
+set.seed(123)
+train <- createDataPartition(df_arbol$`Tasa_SUPERA/MAT`, p = 0.8, list = FALSE)
+arbol_train <- df_arbol[train, ]
+arbol_test  <- df_arbol[-train, ]
+
+modelo_arbol <- rpart(`Tasa_SUPERA/MAT` ~ ., data = arbol_train, method = "anova")
+
+pred_arbol <- predict(modelo_arbol, arbol_test)
+
+print(paste("RMSE:", RMSE(pred_arbol, arbol_test$`Tasa_SUPERA/MAT`)))
+print(paste("R-cuadrado:", R2(pred_arbol, arbol_test$`Tasa_SUPERA/MAT`)))
+```
+
+La mejora respecto del modelo de regresión lineal son considerables, el árbol de decisión consigue explicar casi un 67% de la varianza en las tasas de superación. Esto supone un salto de rendimiento masivo frente al 18.7% de la regresión simple. Al permitir que el algoritmo genere ramas lógicas basadas en el resto de variables, el modelo logra capturar la complejidad real del conjunto de datos. Por otro lado, el margen de error promedio del modelo baja al 12.9%. En términos prácticos, cuando el árbol intenta predecir la tasa de aprobados de una materia, la predicción se desvía apenas un 13%.
+
+La principal conclusión que se extrae de estos resultados es que el éxito o fracaso académico en la US se ve muy influenciada por contextos específicos. La dificultad de una asignatura no depende solo de cuántos alumnos decidan no presentarse a evaluación, sino del centro que la imparte, del plan de estudios al que pertenece y de las inercias históricas que arrastra. Queda demostrado empíricamente que, al incorporar estas variables categóricas, es posible construir un sistema de predicción lo suficientemente preciso como para ser utilizado por los departamentos universitarios como herramienta de "alerta temprana" ante asignaturas en riesgo de colapso académico.
+
+## XGBoost
+
+Aunque sorprendentes respecto de la regresión simple, los resultados que nos arroja el árbol de decisión siguen teniendo amplio margen de mejora. Para buscar mayor precisión implementaremos a continuación un algoritmo XGBoost, con la idea de mejorar los resultados obtenidos, ya que a diferencia del árbol de decisión este algoritmo entrena una serie de árboles de forma secuencial cada uno mejorando los fallos de su predecesor, este aprendizaje sobre sus propios fallos debería depararnos una mayor precisión en nuestra predicción. Con el uso de este algoritmo se pretende minimizar el sesgo y la varianza y aumentar la precisión con respecto a los 2 anteriores modelos.
+```{r}
+#One-Hot Encoding
+df_OH <- model.matrix(`Tasa_SUPERA/MAT` ~ . - 1, data = df_arbol) #reciclamos el dataset del árbol de decisión
+tasa_sup <- df_arbol$`Tasa_SUPERA/MAT`
+
+set.seed(123)
+train_OH <- createDataPartition(tasa_sup, p = 0.8, list = FALSE)
+
+train_x <- df_OH[train_OH, ]
+train_y <- tasa_sup[train_OH]
+
+test_x <- df_OH[-train_OH, ]
+test_y <- tasa_sup[-train_OH]
+
+modelo_xgb <- xgboost(data = train_x, 
+                      label = train_y, 
+                      max_depth = 8,          
+                      eta = 0.05,             
+                      nrounds = 300,         
+                      subsample = 0.7,        #% de datos usados por árbol
+                      colsample_bytree = 0.7, #% de las variables usadas por árbol          
+                      objective = "reg:squarederror",
+                      verbose = 0)
+
+
+pred_xgb <- predict(modelo_xgb, test_x)
+
+
+print(paste("RMSE:", RMSE(pred_xgb, test_y)))
+print(paste("R-cuadrado:", R2(pred_xgb, test_y)))
+```
+
+Con el objetivo de maximizar el rendimiento del algoritmo XGBoost, realizamos un pequeño ajuste de hiperparámetros. Las variaciones en la profundidad no suponen grandes variaciones en el resultado, incluso lo empeoran para valores elevados, los mejores resultados los hemos obtenido para una profundidad de 8. La tasa de aprendizaje (0.05) y la cantidad de árboles (300) se establecen en mencionados valores debido a que al probar con un aprendizaje más lento y una mayor cantidad de árboles las predicciones van empeorando contínuamente aunque no de manera alarmante. Llegados a este punto habíamos obtenido los siguientes resultados: RMSE = 0.0933 y R-cuadrado: 0.8269.
+En la búsqueda de mejores resultados se añadieron 2 nuevos hiperparámetros que evitan la memorización del dataset por medio de la "omisión" de parte de la información durante el entrenamiento. Subsample y colsample_bytree esconden al azar un porcentaje de las muestras y de las variables respectivamente. Al otorgar el valor 0.7 a ambos obligamos a que cada árbol trabajará con el 70% aleatorio de las muestras y variables. Tras implementar esta mejora nuestras métricas alcanzaron los siguientes valores: RMSE= 0.0928 y R-cuadrado: 0.8290, una mejora 
+muy limitada que sugiere que el algoritmo no "memoriza" localmente el dataset. Esta estabilización de las métricas demuestran que se ha alcanzado el techo predictivo del conjunto de datos. Podemos concluir que el algoritmo ha logrado extraer toda la varianza explicable por las variables.
+
+Finalmente hemos alcanzado un modelo que permite predecir el éxito académico de una asignatura con casi un 83% de precisión en base a la asignatura en cuestión, la titulación y centro, e información sobre la matriculación y tasa de presentados a examen.
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
