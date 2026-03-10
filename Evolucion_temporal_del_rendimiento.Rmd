@@ -1,0 +1,721 @@
+---
+title: "Evolución temporal del rendimiento y abandono"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: true
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+# Carga de librerias necesarias
+
+```{r}
+library(tidyverse)
+```
+
+# Configuracion
+
+```{r}
+data_dir = "C:/Users/AVS/ETSII/Workspaces/DS/Trabajo DS/Data"
+dataset_abandono_rendimiento = "dataset_abandono_rendimiento_estricto.csv"
+```
+
+# Carga de datos
+
+## Cargamos dataset de abandono rendimiento
+
+```{r}
+df_abandono_rendimiento = read_csv(file.path(data_dir, dataset_abandono_rendimiento))
+```
+
+```{r}
+spec(df_abandono_rendimiento)
+```
+
+## Cargamos dataset de codigo centro
+
+```{r}
+df_codigo_centro = read_csv(file.path(data_dir, "dataset_codigo_centro.csv"))
+```
+
+```{r}
+spec(df_codigo_centro)
+```
+
+## Cargamos dataset de codigo titulaciones
+
+```{r}
+df_codigo_titulacion = read_csv(file.path(data_dir, "dataset_codigo_titulaciones.csv"))
+```
+
+```{r}
+spec(df_codigo_centro)
+```
+
+# Previsualizacion de los datos
+
+## Datos abandono rendimiento
+
+```{r}
+head(df_abandono_rendimiento)
+```
+
+## Datos codigo centro
+
+```{r}
+head(df_codigo_centro)
+```
+
+## Datos codigo titulacion
+
+```{r}
+head(df_codigo_titulacion)
+```
+
+
+## Evolucion general
+
+```{r}
+df_evolucion_abandono_rendimiento = df_abandono_rendimiento %>%
+  group_by(Año) %>%
+  summarise(Tasa_Rendimiento_Promedio = mean(Tasa_Rendimiento),
+            Tasa_Abandono_Promedio = mean(Tasa_Abandono),
+            Matriculados_Rendimiento = sum(Matriculados_Rendimiento),
+            Matriculados_Abandono = sum(Matriculados_Abandono))
+df_evolucion_abandono_rendimiento
+```
+
+```{r}
+rango_rendimiento <- range(df_evolucion_abandono_rendimiento$Tasa_Rendimiento_Promedio, na.rm = TRUE)
+rango_abandono <- range(df_evolucion_abandono_rendimiento$Tasa_Abandono_Promedio, na.rm = TRUE)
+
+factor_conversion <- (rango_rendimiento[2] - rango_rendimiento[1]) / 
+                     (rango_abandono[2] - rango_abandono[1])
+
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año)) +
+  geom_line(aes(y = Tasa_Rendimiento_Promedio, color = "Rendimiento"), group = 1) +
+  geom_point(aes(y = Tasa_Rendimiento_Promedio, color = "Rendimiento"), color = "red") +
+  geom_line(aes(y = (Tasa_Abandono_Promedio - rango_abandono[1]) * factor_conversion + rango_rendimiento[1], 
+                color = "Abandono"), group = 1) +
+  geom_point(aes(y = (Tasa_Abandono_Promedio - rango_abandono[1]) * factor_conversion + rango_rendimiento[1], 
+                 color = "Abandono"), color = "blue") +
+  scale_y_continuous(
+    name = "Tasa de Rendimiento (%)",
+    limits = rango_rendimiento,
+    sec.axis = sec_axis(
+      trans = ~(. - rango_rendimiento[1]) / factor_conversion + rango_abandono[1],
+      name = "Tasa de Abandono (%)"
+    )
+  ) +
+  labs(title = "Evolución Temporal del Rendimiento y Abandono Promedio",
+       x = "Año") +
+  scale_color_manual(values = c("Rendimiento" = "red", "Abandono" = "blue")) +
+  theme_minimal() +
+  theme(
+    legend.title = element_blank(),
+    axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+En esta grafica se puede ver la evolucion promedio general de todas las titulaciones a lo largo de los años de estudio.
+
+Con esta grafica solo se puede apreciar una correlacion negativa ya que cuando sube una la otra baja.
+
+Sin embargo, no se puede apreciar una relacion directa entre estas dos variables, ya que el rendimiento y el abandono pueden estar influenciados por muchos factores diferentes, como la calidad de la enseñanza, el apoyo académico, las circunstancias personales de los estudiantes, entre otros.
+
+Por lo tanto, aunque pueda existir una correlacion negativa entre estas dos variables, no se puede concluir que una cause la otra.
+
+
+```{r}
+
+rango_mat_rendimiento <- range(df_evolucion_abandono_rendimiento$Matriculados_Rendimiento, na.rm = TRUE)
+rango_mat_abandono <- range(df_evolucion_abandono_rendimiento$Matriculados_Abandono, na.rm = TRUE)
+
+factor_conversion <- (rango_mat_rendimiento[2] - rango_mat_rendimiento[1]) / 
+                     (rango_mat_abandono[2] - rango_mat_abandono[1])
+
+# 3. Creación del gráfico
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año)) +
+  
+  # Capas para Matriculados_Rendimiento (Eje principal - izquierdo)
+  geom_line(aes(y = Matriculados_Rendimiento, color = "Rendimiento"), group = 1) +
+  geom_point(aes(y = Matriculados_Rendimiento, color = "Rendimiento"), color = "red") +
+  
+  # Capas para Matriculados_Abandono (Eje secundario - transformado)
+  geom_line(aes(y = (Matriculados_Abandono - rango_mat_abandono[1]) * factor_conversion + rango_mat_rendimiento[1], 
+                color = "Abandono"), group = 1) +
+  geom_point(aes(y = (Matriculados_Abandono - rango_mat_abandono[1]) * factor_conversion + rango_mat_rendimiento[1], 
+                 color = "Abandono"), color = "blue") +
+  
+  # Escalas y configuración de ambos ejes Y
+  scale_y_continuous(
+    name = "Matriculados con Rendimiento",
+    limits = rango_mat_rendimiento,
+    sec.axis = sec_axis(
+      trans = ~(. - rango_mat_rendimiento[1]) / factor_conversion + rango_mat_abandono[1],
+      name = "Matriculados con Abandono"
+    )
+  ) +
+  
+  # Etiquetas, colores y tema
+  labs(title = "Evolución Temporal de Matriculados: Rendimiento y Abandono",
+       x = "Año") +
+  scale_color_manual(values = c("Rendimiento" = "red", "Abandono" = "blue")) +
+  theme_minimal() +
+  theme(
+    legend.title = element_blank(),
+    legend.position = "bottom", # Añadido opcional para que la leyenda no quite espacio lateral
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+
+En esta otra grafica, se pueden ver el número de matrículas que han formado parte de la estadística tanto para abandono como para rendimiento.
+
+Se puede ver claramente como el numero de matriculados en rendimiento es mucho mayor que el de abandono. Esto se debe a que en los datos de rendimiento se han contado el número de asignaturas matriculadas, mientras que en abandono solo se han contado las matrículas en la titulación.
+
+### Correlacion general
+
+```{r}
+cor(df_evolucion_abandono_rendimiento$Tasa_Rendimiento_Promedio, 
+    df_evolucion_abandono_rendimiento$Tasa_Abandono_Promedio, 
+    method = "pearson")
+
+cor(df_evolucion_abandono_rendimiento$Tasa_Rendimiento_Promedio, 
+    df_evolucion_abandono_rendimiento$Tasa_Abandono_Promedio, 
+    method = "kendall")
+
+cor(df_evolucion_abandono_rendimiento$Tasa_Rendimiento_Promedio, 
+    df_evolucion_abandono_rendimiento$Tasa_Abandono_Promedio, 
+    method = "spearman")
+```
+
+Aunque no haya una relaccion directa entre abandono y rendimiento se puede ver que existe una correlación negativa entre estas 2 variables, es decir, a mayor rendimiento promedio, menor abandono promedio. 
+
+Esto se puede deber a que un mayor rendimiento puede motivar a los estudiantes a continuar sus estudios, mientras que un menor rendimiento puede llevar a la frustración y al abandono en los siguientes años.
+
+# Pregunta Grupal: Evolución temporal del rendimiento y abandono
+
+## Estudio del rendimiento
+
+Empezando por el rendimiento, en la visualización anterior se puede ver claramente como en la grafica de rendimiento hay un pico en el año 2019_2020, justamente durante el covid.
+
+#### Grafica de rendimiento general
+```{r}
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Rendimiento_Promedio)) +
+  geom_line(group = 1, color = "red") +
+  geom_point(color = "red") +
+  labs(title = "Evolución Temporal del Rendimiento Promedio",
+       x = "Año",
+       y = "Tasa de Rendimiento Promedio") +
+  theme_minimal()
+```
+
+Esta fluctuacion general del rendimiento esta claramente influenciada por el covid y el caos académico que produjo suspender las clases presenciales y proceder con clases y evaluación online.
+
+Eso produjo que las notas de los alumnos subieran ya que los profesores se vieron obligados a flexibilizar las evaluaciones lo que provocó un aumento del rendimiento durante ese año.
+
+No obstante, a pesar de ese pico, se puede ver como el rendimiento vuelve a su tendencia normal en los años siguientes, lo que indica que el impacto del covid en el rendimiento fue temporal y no tuvo un efecto duradero en la tendencia general del rendimiento.
+
+#### Grafica con interpolacion entre el año 2018_2019 y el año 2021_2022
+```{r}
+df_con_indice <- df_evolucion_abandono_rendimiento %>%
+  mutate(indice = row_number())
+
+valor_antes <- df_con_indice %>% filter(indice == 2) # 2018_2019
+valor_despues <- df_con_indice %>% filter(indice == 5) # 2021_2022
+
+y1 <- valor_antes$Tasa_Rendimiento_Promedio
+y2 <- valor_despues$Tasa_Rendimiento_Promedio
+x1 <- 2
+x2 <- 5
+
+df_interp <- data.frame(
+  Año = c("2018_2019", "2019_2020", "2020_2021", "2021_2022"),
+  indice = c(2, 3, 4, 5),
+  Tasa_Rendimiento_Promedio = c(
+    y1,
+    y1 + (y2 - y1) / (x2 - x1) * (3 - x1),
+    y1 + (y2 - y1) / (x2 - x1) * (4 - x1),
+    y2
+  )
+)
+
+# Graficar
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Rendimiento_Promedio)) +
+  geom_line(group = 1, color = "red") +
+  geom_point(color = "red") +
+  geom_line(data = df_interp, 
+            color = "orange", linewidth = 1.5, group = 1, linetype = "dashed", alpha = 0.5) +
+  geom_point(data = df_interp, color = "orange", size = 3, shape = 4, alpha = 0.5) +
+  labs(title = "Evolución Temporal del Rendimiento Promedio",
+       x = "Año",
+       y = "Tasa de Rendimiento Promedio") +
+  theme_minimal()
+```
+
+Si realizamos una interpolacion de los datos entre los años 2018_2019 y 2021_2022, se puede ver que el pico del año 2019_2020 no afectó a la tendencia del rendimiento, ya que la interpolacion sigue la tendencia general de los datos.
+
+También, si aumentamos la escala del eje Y para que empiece en 0 y podamos ver todo el rango de la variable el pico es relativamente pequeño.
+
+#### Grafica con interpolacion y escala completa en el eje Y
+```{r}
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Rendimiento_Promedio)) +
+  geom_line(group = 1, color = "red") +
+  geom_point(color = "red") +
+  labs(title = "Evolución Temporal del Rendimiento Promedio",
+       x = "Año",
+       y = "Tasa de Rendimiento Promedio") +
+  geom_line(data = df_interp, 
+            color = "orange", linewidth = 1, group = 1, linetype = "dashed", alpha = 0.5) +
+  geom_point(data = df_interp, color = "orange", size = 3, shape = 4, alpha = 0.5) +
+  theme_minimal() +
+  expand_limits(y = 0) +
+  expand_limits(y = 1)
+```
+
+Ademas de usar la interpolacion, podemos usar el test estadistico Mann-Kendall para la tendencia real de la variable de rendimiento a lo largo del tiempo. Si el pico ha afectado este test nos deberia dar que no hay tendencia significativa en los datos.
+
+Las hipotesis serían:
+- H0: No existe tendencia en la serie temporal
+- H1: Existe una tendencia monotónica en la serie temporal
+
+Dado que el p-value es menor que 0.05, se rechaza la hipotesis nula, lo que indica que hay una tendencia significativa. Si vemos el valor tau -0.81 nos dice que es una tendencia decreciente muy fuerte pero no perfecta
+
+```{r}
+library(Kendall)
+
+mankendall <- MannKendall(df_evolucion_abandono_rendimiento$Tasa_Rendimiento_Promedio)
+mankendall
+```
+
+Si nos centramos en los disitintos centros, se puede ver que el rendimiento de cada centro sigue una tendencia similar a la del rendimiento general, con un pico en el año 2019_2020 y una vuelta a la tendencia normal en los años siguientes. 
+
+Esto nos indica que el impacto del covid en el rendimiento fue generalizado y afectó a todos los centros de manera similar.
+
+#### Grafica de rendimiento por centro
+```{r}
+df_evolucion_centro = df_abandono_rendimiento %>%
+  group_by(Año, Cod_Centro) %>%
+  summarise(Tasa_Rendimiento_Promedio = mean(Tasa_Rendimiento),
+            Tasa_Abandono_Promedio = mean(Tasa_Abandono))
+df_evolucion_centro <- df_evolucion_centro %>%
+  left_join(df_codigo_centro, by = c("Cod_Centro" = "Cod_Centro"))
+
+ggplot(df_evolucion_centro, aes(x = Año, y = Tasa_Rendimiento_Promedio, color = Nombre_Centro)) +
+  geom_vline(xintercept = "2019_2020", color = "red", linetype = "solid", linewidth = 1, alpha = 0.5) +
+  geom_line(aes(group = Cod_Centro), linewidth = 0.7) +
+  geom_point(size = 1.5) +
+  facet_wrap(~Nombre_Centro, ncol = 6) +
+  labs(title = "Evolución Temporal del Rendimiento Promedio por Centro",
+       x = "Año",
+       y = "Tasa de Rendimiento Promedio") +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    strip.text = element_text(size = 12)
+  )
+
+ggsave("images/grafica_evolucion_rendimiento_centros_facetas.png", width = 20, height = 9, dpi = 400)
+```
+
+En esta grafica se puede ver como hay centros que tienen una tendencia más estable que otros
+
+Si calculamos la diferencia entre el rendimiento del año 2019_2020 y el rendimiento del año 2018_2019, podemos ver mejor el aumento del rendimiento segun el centro
+
+#### Grafica de diferencia de rendimiento entre el año 2018_2019 y el año 2019_2020 por centro
+```{r}
+df_evolucion_centro_diff <- df_evolucion_centro %>%
+  group_by(Cod_Centro) %>%
+  mutate(Diferencia_Rendimiento = Tasa_Rendimiento_Promedio - lag(Tasa_Rendimiento_Promedio))
+
+# grafico de barras
+ggplot(df_evolucion_centro_diff %>% filter(Año == "2019_2020"), aes(x = reorder(Nombre_Centro, Diferencia_Rendimiento), y = Diferencia_Rendimiento, fill = Nombre_Centro)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Desviación de rendimieto en 2019_2020",
+       x = "Centro",
+       y = "Diferencia de Rendimiento") +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(size = 10),
+    axis.text.y = element_text(size = 10),
+    strip.text = element_text(size = 12)
+  ) +
+  coord_flip()
+
+ggsave("images/grafica_diferencia_rendimiento_centros_19_20.png", width = 8, height = 6, dpi = 300)
+```
+
+Si vemos los datos de diferencia de centros en otros años antes y despues del COVID, como los años 2018_2019 y 2021_2022.
+
+#### Grafica de diferencia de rendimiento entre el año 2017_2018 y el año 2018_2019 por centro
+```{r}
+df_evolucion_centro_diff <- df_evolucion_centro %>%
+  group_by(Cod_Centro) %>%
+  mutate(Diferencia_Rendimiento = Tasa_Rendimiento_Promedio - lag(Tasa_Rendimiento_Promedio))
+
+# grafico de barras
+ggplot(df_evolucion_centro_diff %>% filter(Año == "2018_2019"), aes(x = reorder(Nombre_Centro, Diferencia_Rendimiento), y = Diferencia_Rendimiento, fill = Nombre_Centro)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Desviación de rendimieto en 2018_2019",
+       x = "Centro",
+       y = "Diferencia de Rendimiento") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
+
+ggsave("images/grafica_diferencia_rendimiento_centros_18_19.png", width = 8, height = 6, dpi = 300)
+```
+
+Para el año 2018_2019, el año antes del COVID, se puede ver la mayoría de centros tienden a disminuir el rendimiento.
+
+#### Grafica de diferencia de rendimiento entre el año 2019_2020 y el año 2020_2021 por centro
+```{r}
+df_evolucion_centro_diff <- df_evolucion_centro %>%
+  group_by(Cod_Centro) %>%
+  mutate(Diferencia_Rendimiento = Tasa_Rendimiento_Promedio - lag(Tasa_Rendimiento_Promedio))
+
+# grafico de barras
+ggplot(df_evolucion_centro_diff %>% filter(Año == "2021_2022"), aes(x = reorder(Nombre_Centro, Diferencia_Rendimiento), y = Diferencia_Rendimiento, fill = Nombre_Centro)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Desviación de rendimieto en 2021_2022",
+       x = "Centro",
+       y = "Diferencia de Rendimiento") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
+
+ggsave("images/grafica_diferencia_rendimiento_centros_21_22.png", width = 8, height = 6, dpi = 300)
+```
+
+También, dos años después del COVID, en el año 2021_2022, se puede ver como la mayoría de centros tienden a disminuir el rendimiento, aunque, a diferencia que el año anterior al COVID, en este año las diferencia han notablemente mayores, probablemente a causa del periodo de adaptación.
+
+Esto tambien se puede comprobar viendo las tendencias generales de los centros.
+
+#### Grafica de diferencia de rendimiento entre el año 2020_2021 y el año 2021_2022 por centro
+```{r}
+df_evolucion_centro_diff <- df_evolucion_centro %>%
+  group_by(Cod_Centro) %>%
+  mutate(Diferencia_Rendimiento = Tasa_Rendimiento_Promedio - lag(Tasa_Rendimiento_Promedio))
+
+# grafico de barras
+ggplot(df_evolucion_centro_diff %>% filter(Año == "2022_2023"), aes(x = reorder(Nombre_Centro, Diferencia_Rendimiento), y = Diferencia_Rendimiento, fill = Nombre_Centro)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Desviación de rendimieto en 2022_2023",
+       x = "Centro",
+       y = "Diferencia de Rendimiento") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
+
+ggsave("images/grafica_diferencia_rendimiento_centros_22_23.png", width = 8, height = 6, dpi = 300)
+```
+
+Lo anterior se verifica escogiendo el año siguiente donde se puede ver que los valores de rendimiento volvieron a ser similares a los del año 2018_2019, lo que indica que el impacto del COVID en el rendimiento fue temporal y no tuvo un efecto duradero en la tendencia general del rendimiento.
+
+#### Grafica de diferencias
+```{r}
+ggplot(df_evolucion_centro_diff %>% filter(Año %in% c("2018_2019", "2019_2020", "2020_2021", "2022_2023", "2023_2024")), 
+       aes(x = Año, y = Diferencia_Rendimiento, group = Nombre_Centro, color = Nombre_Centro)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  labs(title = "Evolución de la Desviación de Rendimiento por Centro",
+       x = "Año",
+       y = "Diferencia de Rendimiento",
+       color = "Centro") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 10),
+    axis.text.y = element_text(size = 10),
+    legend.position = "right"
+  )
+ggsave("images/grafica_diferencia_rendimiento_centros_parallel.png", width = 15, height = 6, dpi = 300)
+```
+
+Con esta gráfica vemos las diferencias a lo largo de los años juntas en vez de separarlas en un grafico de barras.
+
+Además en esta gráfica se puede ver mejor como afectó a los centros de manera distinta ya que se puede ver claramente que la dispersión aumenta durante esos años.
+
+## Estudio del abandono
+
+El estudio del abandono es más complicado que el estudio del rendimiento. Esto se debe a que para que se considere que un estudiante abandona, este no se debe matricular en una titulacion en los 2 años siguientes, es decir, un estudiante que ha abandonado en 2020_2021, se matriculó en 2020_2021 y no se matriculó en 2021_2022 y 2022_2023.
+
+Esto es un problema, ya que diluye la informción y se tengan que tener en cuenta 3 años.
+
+#### Grafica de abandono general
+```{r}
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Abandono_Promedio)) +
+  geom_line(group = 1, color = "blue") +
+  geom_point(color = "blue") +
+  labs(title = "Evolución Temporal del Abandono Promedio",
+       x = "Año",
+       y = "Tasa de Abandono Promedio") +
+  theme_minimal()
+```
+Una cosa clara que vimos al principio es la correlación negativa entre el rendimiento y el abandono. Esto nos dice que el abandono y el rendimiento estan ligados de cierta manera.
+
+```{r}
+mankendall <- MannKendall(df_evolucion_abandono_rendimiento$Tasa_Abandono_Promedio)
+mankendall
+```
+Por otro lado, el test estadístico nos dice que los datos no siguen tendencia por lo que se puede tomar como un dato al azar.
+
+#### Grafica de rendimiento y abandono general
+```{r}
+rango_rendimiento <- range(df_evolucion_abandono_rendimiento$Tasa_Rendimiento_Promedio, na.rm = TRUE)
+rango_abandono <- range(df_evolucion_abandono_rendimiento$Tasa_Abandono_Promedio, na.rm = TRUE)
+
+factor_conversion <- (rango_rendimiento[2] - rango_rendimiento[1]) / 
+                     (rango_abandono[2] - rango_abandono[1])
+
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año)) +
+  geom_line(aes(y = Tasa_Rendimiento_Promedio, color = "Rendimiento"), group = 1) +
+  geom_point(aes(y = Tasa_Rendimiento_Promedio, color = "Rendimiento"), color = "red") +
+  geom_line(aes(y = (Tasa_Abandono_Promedio - rango_abandono[1]) * factor_conversion + rango_rendimiento[1], 
+                color = "Abandono"), group = 1) +
+  geom_point(aes(y = (Tasa_Abandono_Promedio - rango_abandono[1]) * factor_conversion + rango_rendimiento[1], 
+                 color = "Abandono"), color = "blue") +
+  scale_y_continuous(
+    name = "Tasa de Rendimiento (%)",
+    limits = rango_rendimiento,
+    sec.axis = sec_axis(
+      trans = ~(. - rango_rendimiento[1]) / factor_conversion + rango_abandono[1],
+      name = "Tasa de Abandono (%)"
+    )
+  ) +
+  labs(title = "Evolución Temporal del Rendimiento y Abandono Promedio",
+       x = "Año") +
+  scale_color_manual(values = c("Rendimiento" = "red", "Abandono" = "blue")) +
+  theme_minimal() +
+  theme(
+    legend.title = element_blank(),
+    axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+A pesar de haber una correlación entre estas variables, no se puede saber con certeza si una influencia a la otra. 
+
+No obstante, esta claro que esta relación no es casualidad ya que si un estudiante abandona suele no completar sus creditos, por lo que si el rendimiento baja, sube el abandono. 
+
+Esto puede ocurrir tambien al contrario, si un estudiante tiene un rendimiento bajo, se plantee abandonar.
+
+#### Grafica de rendimiento por centro
+```{r}
+df_evolucion_centro = df_abandono_rendimiento %>%
+  group_by(Año, Cod_Centro) %>%
+  summarise(Tasa_Rendimiento_Promedio = mean(Tasa_Rendimiento),
+            Tasa_Abandono_Promedio = mean(Tasa_Abandono))
+df_evolucion_centro <- df_evolucion_centro %>%
+  left_join(df_codigo_centro, by = c("Cod_Centro" = "Cod_Centro"))
+
+ggplot(df_evolucion_centro, aes(x = Año, y = Tasa_Abandono_Promedio, color = Nombre_Centro)) +
+  geom_line(aes(group = Cod_Centro), linewidth = 0.7) +
+  geom_point(size = 1.5) +
+  facet_wrap(~Nombre_Centro, ncol = 6) +
+  labs(title = "Evolución Temporal del Abandono Promedio por Centro",
+       x = "Año",
+       y = "Tasa de Abandono Promedio") +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    strip.text = element_text(size = 12)
+  )
+
+ggsave("images/grafica_evolucion_abandono_centros_facetas.png", width = 20, height = 9, dpi = 300)
+```
+
+Con el abandono se ve lo mismo que con el rendimiento, hay centros que tienen una tendencia más estable que otros, aunque en general todos los centros siguen una tendencia similar a la del abandono general, con un mayor caos debido a que hay que tener en cuenta los 2 años que tienen que pasar para que un estudiante abandone.
+
+#### Grafica de abandono general
+```{r}
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año, y = Tasa_Abandono_Promedio)) +
+  geom_line(group = 1, color = "blue") +
+  geom_point(color = "blue") +
+  labs(title = "Evolución Temporal del Abandono Promedio",
+       x = "Año",
+       y = "Tasa de Abandono Promedio") +
+  theme_minimal()
+```
+
+Si volvemos a la gráfica anterior, se puede ver una bajada del abandono durante los años 2019_2020 y 2020_2021, una posible causa de esto se puede deber al aumento de rendimiento durante esos años, que causó que los estudiantes superaran alguna asignatura dificil y decidieran contituar con la titulación.
+
+#### Grafica de diferencia de abandono entre el año 2018_2019 y el año 2019_2020 por centro 
+```{r}
+df_evolucion_centro_diff <- df_evolucion_centro %>%
+  group_by(Cod_Centro) %>%
+  mutate(Diferencia_Rendimiento = Tasa_Rendimiento_Promedio - lag(Tasa_Rendimiento_Promedio),
+         Diferencia_Abandono = Tasa_Abandono_Promedio - lag(Tasa_Abandono_Promedio))
+
+# grafico de barras
+ggplot(df_evolucion_centro_diff %>% filter(Año == "2018_2019"), aes(x = reorder(Nombre_Centro, Diferencia_Abandono), y = Diferencia_Abandono, fill = Nombre_Centro)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Desviación de abandono en 2018_2019",
+       x = "Centro",
+       y = "Diferencia de Abandono") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
+
+ggsave("images/grafica_diferencia_abandono_centros_18_19.png", width = 8, height = 6, dpi = 300)
+```
+
+Se puede ver al comparar las gráficas que la hipotesis previa tiene parte de sentido, ya que titulaciones que estaban en crecimiento de abandono, al año siguiente pasaron a reducir en gran medida el abandono.
+
+#### Grafica de diferencia de abandono entre el año 2018_2019 y el año 2019_2020 por centro 
+```{r}
+df_evolucion_centro_diff <- df_evolucion_centro %>%
+  group_by(Cod_Centro) %>%
+  mutate(Diferencia_Rendimiento = Tasa_Rendimiento_Promedio - lag(Tasa_Rendimiento_Promedio),
+         Diferencia_Abandono = Tasa_Abandono_Promedio - lag(Tasa_Abandono_Promedio))
+
+# grafico de barras
+ggplot(df_evolucion_centro_diff %>% filter(Año == "2019_2020"), aes(x = reorder(Nombre_Centro, Diferencia_Abandono), y = Diferencia_Abandono, fill = Nombre_Centro)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Desviación de abandono en 2019_2020",
+       x = "Centro",
+       y = "Diferencia de Abandono") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
+
+ggsave("images/grafica_diferencia_abandono_centros_19_20.png", width = 8, height = 6, dpi = 300)
+```
+Un claro ejemplo es la facultad de matemáticas, que en el año 2018_2019 fue el centro con mayor aumento de abandono y en 2019_2020 ha pasado a ser el centro con mayor disminucion de abandono.
+
+También hay que destacar que los centros donde se cursan las titulaciones más dificiles son los que más han conseguido reducir el abandono en el 2019_2020 (esto incluye tambien a los dos años siguientes) lo que nos dice de forma indirecta que este evento provoco que los estudiantes fueran capaz de seguir con el grado gracias a quitarse asignaturas difíciles.
+
+#### Grafica de diferencia de abandono entre el año 2019_2020 y el año 2020_2021 por centro 
+```{r}
+df_evolucion_centro_diff <- df_evolucion_centro %>%
+  group_by(Cod_Centro) %>%
+  mutate(Diferencia_Rendimiento = Tasa_Rendimiento_Promedio - lag(Tasa_Rendimiento_Promedio),
+         Diferencia_Abandono = Tasa_Abandono_Promedio - lag(Tasa_Abandono_Promedio))
+
+# grafico de barras
+ggplot(df_evolucion_centro_diff %>% filter(Año == "2020_2021"), aes(x = reorder(Nombre_Centro, Diferencia_Abandono), y = Diferencia_Abandono, fill = Nombre_Centro)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Desviación de abandono en 2020_2021",
+       x = "Centro",
+       y = "Diferencia de Abandono") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
+
+ggsave("images/grafica_diferencia_abandono_centros_20_21.png", width = 8, height = 6, dpi = 300)
+```
+
+En el segundo año se puede ver que algunas de las anteriores siguen reduciendo el rendmiento y otras que anteriormente lo aumentaron lo han reducido en este año. Esto se puede deber a las 2 etapas de covid donde en la anterior fué el confinamiento y en la posterior se tuvo un periodo de adaptación donde las clases aparentaban mas sencillas.
+
+Además es posible que el efecto anteriormente descrito perdure algún año más por la condicion temporal de los datos.
+
+#### Grafica de diferencia de abandono entre el año 2020_2021 y el año 2021_2022 por centro 
+```{r}
+df_evolucion_centro_diff <- df_evolucion_centro %>%
+  group_by(Cod_Centro) %>%
+  mutate(Diferencia_Rendimiento = Tasa_Rendimiento_Promedio - lag(Tasa_Rendimiento_Promedio),
+         Diferencia_Abandono = Tasa_Abandono_Promedio - lag(Tasa_Abandono_Promedio))
+
+# grafico de barras
+ggplot(df_evolucion_centro_diff %>% filter(Año == "2021_2022"), aes(x = reorder(Nombre_Centro, Diferencia_Abandono), y = Diferencia_Abandono, fill = Nombre_Centro)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Desviación de abandono en 2021_2022",
+       x = "Centro",
+       y = "Diferencia de Abandono") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
+
+ggsave("images/grafica_diferencia_abandono_centros_21_22.png", width = 8, height = 6, dpi = 300)
+```
+
+Finalmente en el año 2021_2022 se puede ver como la mayoría de centros tienden a aumentar el abandono, aunque, a diferencia que el año anterior al COVID, en este año las diferencia han notablemente mayores.
+
+Una posible causa de este abandono es el aumento de las Formaciones profesionales, que han aumentado su oferta y calidad durante los últimos años, lo que ha provocado que algunos estudiantes que antes se matriculaban en la universidad, ahora se matriculen en una formación profesional.
+
+Haciendo que estudiantes abandonen su grado por una formacion profesional o no se matriculen en la universidad por matricularse en una formacion profesional, lo que ha provocado un aumento del abandono.
+
+```{r}
+
+rango_mat_rendimiento <- range(df_evolucion_abandono_rendimiento$Matriculados_Rendimiento, na.rm = TRUE)
+rango_mat_abandono <- range(df_evolucion_abandono_rendimiento$Matriculados_Abandono, na.rm = TRUE)
+
+factor_conversion <- (rango_mat_rendimiento[2] - rango_mat_rendimiento[1]) / 
+                     (rango_mat_abandono[2] - rango_mat_abandono[1])
+
+# 3. Creación del gráfico
+ggplot(df_evolucion_abandono_rendimiento, aes(x = Año)) +
+  
+  # Capas para Matriculados_Rendimiento (Eje principal - izquierdo)
+  geom_line(aes(y = Matriculados_Rendimiento, color = "Rendimiento"), group = 1) +
+  geom_point(aes(y = Matriculados_Rendimiento, color = "Rendimiento"), color = "red") +
+  
+  # Capas para Matriculados_Abandono (Eje secundario - transformado)
+  geom_line(aes(y = (Matriculados_Abandono - rango_mat_abandono[1]) * factor_conversion + rango_mat_rendimiento[1], 
+                color = "Abandono"), group = 1) +
+  geom_point(aes(y = (Matriculados_Abandono - rango_mat_abandono[1]) * factor_conversion + rango_mat_rendimiento[1], 
+                 color = "Abandono"), color = "blue") +
+  
+  # Escalas y configuración de ambos ejes Y
+  scale_y_continuous(
+    name = "Matriculados con Rendimiento",
+    limits = rango_mat_rendimiento,
+    sec.axis = sec_axis(
+      trans = ~(. - rango_mat_rendimiento[1]) / factor_conversion + rango_mat_abandono[1],
+      name = "Matriculados con Abandono"
+    )
+  ) +
+  
+  # Etiquetas, colores y tema
+  labs(title = "Evolución Temporal de Matriculados: Rendimiento y Abandono",
+       x = "Año") +
+  scale_color_manual(values = c("Rendimiento" = "red", "Abandono" = "blue")) +
+  theme_minimal() +
+  theme(
+    legend.title = element_blank(),
+    legend.position = "bottom", # Añadido opcional para que la leyenda no quite espacio lateral
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+
+Viendo ahora la gráfica de las matriculas que han participado en este estudio se pueden ver como se ha ido reduciendo poco a poco el numero de matrículas, lo que refuerza la hipotesis del abandono de las universidades.
+
+
+# Conclusiones
+
+Finalmente tras el estudio del rendimiento y el abandono a pesar de la falta de datos sólidos para  poder sacar conclusiones claras, se pueden sacar conclusiones interesantes.
+
+El evento más claro que se puede detectar en los datos es el impacto del COVID en el rendimiento y el abandono, donde se puede ver claramente un aumento del rendimiento durante el año 2019_2020 y una reducción del abandono durante los años 2019_2020 y 2020_2021, posible mente causada por la facilidades y la flexibilidad en las evaluaciones durante esta época.
+
+También se puede ver un aumento en el abandono pasado el covid que se puede explicar por el exito de las formaciones profesionales que han causado un abandono de las universidades.
+
+Por otro lado tambien se puede ver que estos eventos, y otros muchos que no se han podido detectar, afectan de forma distinta a cada centro, lo que hace que cada centro tenga una tendencia diferente, aunque en general todos los centros siguen una tendencia similar a la del rendimiento y abandono general.
+
+Tambén el echo de tener pocos años ha hecho que no se puedan detectar tendencias a largo plazo, además de que ha faltado tiempo para analizar todas y cada una de las titulaciones de forma individual.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

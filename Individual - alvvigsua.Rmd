@@ -1,0 +1,231 @@
+---
+title: "Evolución temporal del rendimiento y abandono"
+author: "Álvaro Vigara Suárez - alvvigsua"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+  pdf_document:
+    toc: true
+---
+
+# Carga de librerias necesarias
+
+```{r}
+library(tidyverse)
+```
+
+# Configuracion
+
+```{r}
+data_dir = "C:/Users/AVS/ETSII/Workspaces/DS/Trabajo DS/Data"
+dataset_abandono_rendimiento = "dataset_abandono_rendimiento_estricto.csv"
+```
+
+# Carga de datos
+
+## Cargamos dataset de abandono rendimiento
+
+```{r}
+df_abandono_rendimiento = read_csv(file.path(data_dir, dataset_abandono_rendimiento))
+```
+
+```{r}
+spec(df_abandono_rendimiento)
+```
+
+## Cargamos dataset de codigo centro
+
+```{r}
+df_codigo_centro = read_csv(file.path(data_dir, "dataset_codigo_centro.csv"))
+```
+
+```{r}
+spec(df_codigo_centro)
+```
+
+## Cargamos dataset de codigo titulaciones
+
+```{r}
+df_codigo_titulacion = read_csv(file.path(data_dir, "dataset_codigo_titulaciones.csv"))
+```
+
+```{r}
+spec(df_codigo_centro)
+```
+
+# Previsualizacion de los datos
+
+## Datos abandono rendimiento
+
+```{r}
+head(df_abandono_rendimiento)
+```
+
+## Datos codigo centro
+
+```{r}
+head(df_codigo_centro)
+```
+
+## Datos codigo titulacion
+
+```{r}
+head(df_codigo_titulacion)
+```
+
+
+# Pregunta Individual: Evolución temporal del rendimiento y abandono por rama del conocimiento
+
+
+```{r}
+df_abandono_rendimiento_rama = df_abandono_rendimiento %>%
+  left_join(df_codigo_titulacion, by = c("Cod_Titulacion" = "Cod_Titulacion")) %>%
+  group_by(Año, Rama_Conocimiento) %>%
+  summarise(Tasa_Rendimiento_Promedio = mean(Tasa_Rendimiento),
+            Tasa_Abandono_Promedio = mean(Tasa_Abandono))
+df_abandono_rendimiento_rama
+```
+
+Agrupamos las titulaciones por rama del conocimiento para ver como ha evolucionado en abandono y el rendimiento en las distintas ramas del conocimiento.
+
+
+## Estudio del rendimiento
+
+```{r}
+ggplot(df_abandono_rendimiento_rama, aes(x = Año, y = Tasa_Rendimiento_Promedio, color = Rama_Conocimiento)) +
+  geom_vline(xintercept = "2019_2020", color = "red", linetype = "solid", linewidth = 1, alpha = 0.5) +
+  geom_line(group = 1) +
+  geom_point() +
+  labs(title = "Evolución Temporal del Rendimiento Promedio por Rama Conocimiento",
+       x = "Año",
+       y = "Tasa de Rendimiento Promedio") +
+  theme_minimal() +
+  theme(legend.title = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1))+
+  facet_wrap(~Rama_Conocimiento, ncol = 2)
+```
+
+Si vemos las graficas de rendimiento por rama del conocimiento podemos ver que idependientemente de la tendencia de cada rama, se puede ver como el evento del COVID provocó un aumento puntual del rendimiento en todas las ramas, menos en la de ciencias donde parece que se mantiene la tendencia y luego se produce un gran descenso.
+
+Quitando la de ciencias, el resto de ramas siguen una tendencia similar antes y despues de ese año, lo que indica que el impacto que produjo fue solo temporal.
+
+También, el descenso progresivo en las ramas de Ciencias Sociales y Artes Y Humanidades puede deberse a el hecho de que son grados muy poco demandados, lo que provoca que se tiendan a llenar con alumnos con un menor compromiso y dedicación. Si a eso le sumamos también, que los grados de ciencias, ciencias de la salud e ingenierias han aumentado las notas de corte con los años este efecto puede reforzarse.
+
+```{r}
+ggplot(df_abandono_rendimiento_rama %>% filter(Rama_Conocimiento == "Ciencias"), 
+       aes(x = Año, y = Tasa_Rendimiento_Promedio)) +
+  geom_vline(xintercept = "2019_2020", color = "red", linetype = "solid", linewidth = 1, alpha = 0.5) +
+  geom_line(group = 1, color = "#A3A500", linewidth = 1) +
+  geom_point(color = "#A3A500", size = 3) +
+  labs(title = "Evolución Temporal del Rendimiento Promedio - Ciencias",
+       x = "Año",
+       y = "Tasa de Rendimiento Promedio") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+En cuanto a esta caida en los grados de ciencias, puede deberse a que estos grados son los más exigentes de todos, haciendo que la diferencia entre la evaluacion covid y la vuelta a la normalidad sea muy grande, sumado a que es probable que entrase más alumnos en esos grados gracias al modelo COVID de la PAU, lo que provocaría que el rendimiento medio bajase al haber más alumnos con un perfil más bajo.
+
+
+```{r}
+df_abandono_rendimiento_rama_ciencias = df_abandono_rendimiento %>%
+  left_join(df_codigo_titulacion, by = c("Cod_Titulacion" = "Cod_Titulacion")) %>%
+  group_by(Año) %>%
+  filter(Rama_Conocimiento == "Ciencias") %>%
+  summarise(Titulacion = Titulacion.y,
+            Rama_Conocimiento = Rama_Conocimiento,
+            Tasa_Rendimiento_Promedio = Tasa_Rendimiento,
+            Tasa_Abandono_Promedio = Tasa_Abandono
+            )
+
+ggplot(df_abandono_rendimiento_rama_ciencias, aes(x = Año, y = Tasa_Rendimiento_Promedio, color = Titulacion)) +
+  geom_vline(xintercept = "2019_2020", color = "red", linetype = "solid", linewidth = 1, alpha = 0.5) +
+  geom_line(group = 1) +
+  geom_point() +
+  labs(title = "Evolución Temporal del Rendimiento Promedio para Ciencias",
+       x = "Año",
+       y = "Tasa de Rendimiento Promedio") +
+  theme_minimal() +
+  theme(legend.title = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1))+
+  facet_wrap(~Titulacion, ncol = 2)
+
+ggsave("images/grafica_rendimiento_ciencias.png", width = 11, height = 6, dpi = 300)
+```
+
+Si nos centramos en la rama de ciencias, se puede ver que el descenso del rendimiento se debe en parte a una caida tras la subida del COVID, aunque la principal razón de este descenso está en los másters, concretamente en los Máster en Ciencia y Tecnología de Nuevos Materiales y Máster en Física Nuclear.
+
+No se han encontrado datos sobre estos másters que lleven a darnos una idea de que ha podido pasar concretamente. Una posible causa es que estos sean los más complicados de todos, haciendo que el contrasete de evaluación se note mucho. Esto solo se aplicaría al máster Máster en Ciencia y Tecnología de Nuevos Materiales ya que tiene una tendencia más estable. Por otro lado el de Física nuclear tiene una tendencia más inestable por lo que no podríamos decir nada con seguridad.
+
+
+## Estudio del abandono
+
+
+```{r}
+ggplot(df_abandono_rendimiento_rama, aes(x = Año, y = Tasa_Abandono_Promedio, color = Rama_Conocimiento)) +
+  geom_line(group = 1) +
+  geom_point() +
+  labs(title = "Evolución Temporal del Abandono Promedio por Rama Conocimiento",
+       x = "Año",
+       y = "Tasa de Abandono Promedio") +
+  theme_minimal() +
+  theme(legend.title = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1))+
+  facet_wrap(~Rama_Conocimiento, ncol = 2)
+```
+
+En cuanto al abanono no es tan sencillo analizar patrones debido a esa caracteristica temporal de los datos (el abandono de un año significa que esa proporcion de estudiantes no se han matricualdo en la misma titulacion en los dos años posteriores)
+
+Por lo general, el abandono en ciencias y ciencias de la salud es el menor de todos y es bastante constante.
+
+En cuanto a las ramas de Artes y Humanidades es alto y con una tendencia creciente, lo que puede deberse a que son grados poco demandados y con un perfil de estudiante con menor compromiso y dedicación, lo que provoca que se tiendan a llenar con alumnos con un menor compromiso y dedicación
+
+En cuanto a las ingenierías, es probable que este efecto se refuerce por el aumento de las formaciones profesionales en estas áreas.
+
+
+# Conclusiones
+
+En cuanto a la evolución temporal del rendimiento y abandono por rama del conocimiento, se puede ver que el evento del COVID provocó un aumento puntual del rendimiento en todas las ramas, menos en la de ciencias donde parece que se mantiene la tendencia y luego se produce un gran descenso.
+
+Quitando la de ciencias, el resto de ramas siguen una tendencia similar antes y despues de ese año, lo que indica que el impacto que produjo fue solo temporal.
+
+La caida en los grados de ciencias, puede deberse a que estos grados son los más exigentes de todos, haciendo que la diferencia entre la evaluacion covid y la vuelta a la normalidad sea muy grande, sumado a que es probable que entrase más alumnos en esos grados gracias al modelo COVID de la PAU, lo que provocaría que el rendimiento medio bajase al haber más alumnos con un perfil más bajo.
+
+En cuanto al abandono, por lo general, el abandono en ciencias y ciencias de la salud es el menor de todos y es bastante constante.
+
+Cosa que en las ramas de Artes y Humanidades es alto y con una tendencia creciente, lo que puede deberse a que son grados poco demandados y con un perfil de estudiante con menor compromiso y dedicación, lo que provoca que se tiendan a llenar con alumnos con un menor compromiso y dedicación.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

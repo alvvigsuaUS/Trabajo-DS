@@ -13,7 +13,7 @@ library(tidyverse)
 # Configuracion
 
 ```{r}
-base_dir = "Directoriobase"
+base_dir = "C:\\Users\\AVS\\ETSII\\Workspaces\\DS\\Trabajo DS\\rawData\\abandono_rendimientosdfasdfas"
 ```
 
 
@@ -209,7 +209,7 @@ datos_finales
 
 
 ```{r}
-write_csv(datos_finales, "dataset_abandono_rendimiento_estricto.csv")
+write_csv(datos_finales, "dataset_abandono_rendimiento_estricto_2.csv")
 ```
 
 
