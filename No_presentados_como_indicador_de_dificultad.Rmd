@@ -1,0 +1,2678 @@
+---
+title: "Trabajo grupal - Data Science"
+author: "Pablo Medinilla Mejías, Álvaro Vigara Suárez, María Márquez Becerra, Juan"
+date: "Curso 2025-2026"
+output:
+  html_document:
+    toc: true
+    toc_depth: '3'
+    df_print: paged
+  word_document:
+    toc: true
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+subtitle: |
+  | Escuela Internacional de Posgrado
+  | Universidad de Sevilla
+  | Asignatura: Data Science
+  | Titulación: Máster en Ingeniería del Software: Cloud, Datos y Gestión TI
+  | Profesores: Belén Vega Márquez y José Antonio Parejo Maestre
+  | Fecha de entrega: 10 de marzo de 2026
+---
+
+# Conjunto de Datos
+
+## Descripción del Dominio
+
+Este trabajo analiza la calidad académica de la Universidad de Sevilla (US), una de las universidades públicas más grandes de España con más de 70.000 estudiantes matriculados y una oferta que abarca más de 100 titulaciones de grado y más de 80 másteres oficiales, distribuidos entre sus facultades, escuelas técnicas superiores y centros adscritos.
+
+La universidad genera de forma continua grandes volúmenes de datos académicos: matrículas, calificaciones, abandonos y encuestas de satisfacción, que históricamente se han usado solo para elaborar memorias anuales y cumplir con requisitos de acreditación, pero que tienen un potencial analítico mucho mayor si se explotan con técnicas de ciencia de datos.
+
+El interés del dominio es múltiple. Desde el punto de vista institucional, las tasas de rendimiento y abandono son indicadores oficiales que la Agencia Andaluza del Conocimiento (AAC) y la ANECA utilizan en los procesos de verificación, seguimiento y renovación de la acreditación de los títulos. Un grado con tasas de abandono persistentemente altas puede enfrentarse a una no renovación de su acreditación, con las consecuencias que eso implica para estudiantes y profesorado.
+
+Desde el punto de vista económico, el abandono universitario supone un coste directo para las familias en concepto de matrículas, tiempo y coste de oportunidad, y un coste indirecto para el sistema público, que financia plazas que no se traducen en titulados. En España, estudios del Ministerio de Universidades estiman que entre el 20% y el 30% de los estudiantes que inician un grado no llegan a terminarlo, con tasas especialmente elevadas en las ramas de Ingeniería y Arquitectura, que es precisamente lo que los datos de la US confirman.
+
+Desde el punto de vista social, el abandono no es aleatorio: se concentra en perfiles de estudiante con menos recursos económicos, menor capital cultural familiar y menor rendimiento previo en bachillerato, lo que convierte la retención universitaria en una cuestión de equidad y movilidad social.
+
+En el contexto actual, el análisis cobra especial relevancia por dos razones adicionales. La primera es el impacto del COVID-19: el dataset cubre exactamente el período 2017-2024, lo que incluye los cursos 2019-20 y 2020-21 y permite estudiar si la pandemia produjo un cambio estructural en los indicadores académicos. También podrá estudiarse si el paso a la docencia online aumentó el abandono, alteró las tasas de presentación o modificó el rendimiento de forma diferencial según la rama.
+
+La segunda es la irrupción de la inteligencia artificial generativa a partir de 2022-23: es razonable preguntarse si el uso de herramientas como ChatGPT ha afectado a los resultados académicos, especialmente en asignaturas con componente de trabajo escrito o resolución de problemas.
+
+Finalmente, la elección de la Universidad de Sevilla como caso de estudio tiene una ventaja metodológica importante: al ser una universidad grande con una oferta muy diversa, desde Bellas Artes hasta Ingeniería Aeroespacial. Los patrones que emergen del análisis son más generalizables que los que se obtendrían de una universidad especializada. Si se detecta que el problema de la no-presentación es específico de Ingeniería y no de otras ramas, eso es un hallazgo robusto precisamente porque todas las ramas están representadas en los datos con volúmenes suficientes para la comparación.
+
+## Descripción del conjunto de datos
+
+Los datos provienen del Portal de Transparencia de la Universidad de Sevilla (<https://transparencia.us.es/> , sección 1.5 Datos Académicos). Se utilizan tres fuentes:
+
+1.  **Dataset de matriculados y aprobados (11,5MB):** es el dataset principal del análisis. Contiene 63.883 filas y 15 columnas en un único fichero que cubre desde 2017-18 hasta 2023-24. Cada fila representa una asignatura en un curso académico concreto, e incluye: el centro y la titulación a la que pertenece,el código y nombre de la asignatura, el número de matriculados, presentados y no presentados, el número que superan la asignatura, la tasa de superación sobre matriculados, el desglose de calificaciones (MH, SOB, NOT, APR, suspensos) y el curso académico.
+
+Por ejemplo, una fila indica que en Estadística del Grado en ADE en 2017-18 había 575 matriculados, 483 presentados, 92 no presentados y 317 que superaron la asignatura, consiguiendo el 55,1% de estudiantes matriculados que superan la asignatura y contando con 3MH, 4 sobresalientes, 60 notables, 250 aprobados y 166 suspensos.
+
+Vemos las 6 primeras filas:
+
+Cargamos las librerías
+
+```{r}
+library(readxl)    
+library(tidyverse) 
+library(dplyr)     
+library(ggplot2)   
+library(ggrepel)   #para el etiquetado en gráficos ggplot2 que evitan solapamientos entre textos
+library(scales)    #para el formato de ejes en ggplot2: porcentajes, monedas, notación científica
+library(tidyr)     #para la transformación de datos entre formato ancho y largo (pivot_wider, pivot_longer)
+library(stringr)   #para la manipulación de cadenas de texto: detección, extracción y sustitución de patrones
+library(purrr)     #para aplicar funciones sobre listas y vectores (map, map_dbl...)
+library(broom)     #para convertir resultados de modelos estadísticos a formato tabular ordenado
+library(arules)    
+library(arulesViz) #para la visualizaaión de reglas de asociación obtenidas con arules
+library(tibble)    #para la creación de tibbles, versión moderna del data.frame de R
+```
+
+```{r}
+matriculados_aprobados <- read_excel("rawData/matriculado_aprobado/matriculado_aprobado_2017_2018_a_2023_2024.xls")
+head(matriculados_aprobados)
+#tipos de datos y resumen
+str(matriculados_aprobados)
+summary(matriculados_aprobados[, c("Nº matriculados","Nº presentados",
+                                    "Nº no presentados","Nº que superan",
+                                    "Nº de suspensos")])
+```
+
+2.  **Dataset de abandono y rendimiento (86KB):** contiene datos a nivel de titulación con una media de 200 filas por año, disponible para 6 cursos académicos desde 2017-18 hasta 2023-24. El formato varía según el año: en 2019-2020 abandono y rendimiento están en un único fichero con 178 filas, mientras que en el resto del período están en ficheros separados con el mismo número de filas cada uno. El archivo final está en formato CSV y está formado por 757 filas y 10 columnas.
+
+Cada fila representa una titulación en un curso académico e incluye los códigos de centro y titulación, el nombre de la titulación, el curso académico, la tasa de rendimiento (indicador 1.6, calculada como créditos superados sobre créditos matriculados), el número de alumnos egresados (acumulado desde el inicio del grado), la tasa de abandono (indicador 1.11, calculada como estudiantes que abandonan sobre estudiantes de nuevo ingreso del año anterior) y el número de alumnos que abandonan.
+
+Por ejemplo, la asignatura con código de centro 1, código de titulación 151, con nombre Grado en 'Administración y Dirección de Empresas' en 2017-18 tiene una tasa de rendimiento del 55,26%, 63.348 egresados, una tasa de abandono del 31,11% y 160 alumnos que abandonan. En el curso 2023-24 Filosofía tiene una tasa de abandono llamativa del 96.20% (76 sobre 79).
+
+Vemos las 6 primeras filas:
+
+```{r}
+dataset_abandono_rendimiento = read.csv("data/dataset_abandono_rendimiento_estricto.csv")
+head(dataset_abandono_rendimiento)
+```
+
+3.  **Dataset de satisfacción:** disponible en formato PDF para grados y másteres, con datos desde 2017-18 hasta 2021-22. Recoge la valoración que los estudiantes hacen de su formación, el profesorado y los servicios. Al estar en PDF requiere un tratamiento de extracción previo a cualquier análisis. Está formado por 10 PDFs de unos 2MB cada uno. Incluyen tablas sobre encuestas de satisfacción (comparando por edad y género), centros y titulaciones ordenados por media global...
+
+Para resolver esta pregunta grupal solo se ha utilizado el conjunto de datos de matriculados y aprobados
+
+## Importación, limpieza y tratamiento
+
+El proceso de importación y tratamiento de datos fue diferente para cada uno de los tres datasets, dado que su estructura y formato son distintos.
+
+La importación, limpieza y tratamiento fue realizada en el .rmd 'Unión de datasets abandono y rendimiento', para esta pregunta se han realizado pequeñas modificaciones para casos concretos que se explican en dichos casos.
+
+# Preguntas a resolver
+
+La pregunta central del análisis surge de forma natural al explorar los datos académicos de la Universidad de Sevilla: **¿puede el porcentaje de no presentados utilizarse como indicador de dificultad académica de una asignatura?**
+
+Esta pregunta es inmediata para cualquier gestor académico o responsable de calidad que acceda por primera vez a estos datos, porque el porcentaje de no presentados es uno de los pocos indicadores disponibles antes de que finalice el proceso de evaluación. Si funciona como señal de dificultad, puede usarse como alerta temprana.
+
+El dataset es especialmente adecuado para abordarla: contiene el número de matriculados, presentados y no presentados asignatura por asignatura durante 7 cursos académicos en toda la oferta de la Universidad de Sevilla, lo que permite calcular las tasas necesarias de forma directa y contrastarlas tanto entre asignaturas como a lo largo del tiempo.
+
+La utilidad del resultado es directa: si el porcentaje de no presentados predice peor rendimiento entre quienes sí se examinan, la institución puede usarlo como criterio de alerta sin esperar al cierre del acta. Si no lo predice, conviene no sobreinterpretar este indicador en los procesos de seguimiento de calidad y planes de estudio.
+
+Para responderla, la descomponemos en dos subpreguntas operativas:
+
+**Subpregunta 1. ¿Un mayor porcentaje de no presentados se asocia con un mayor porcentaje de suspensos entre los que sí se presentan?**
+
+Si el no presentado fuera indicador de dificultad, esperaríamos una correlación positiva entre ambas variables: las asignaturas con más ausencias serían también las que generan más suspensos en quienes se atreven a examinarse.
+
+**Subpregunta 2. ¿Una mayor proporción de estudiantes presentados se asocia con una mayor tasa de superación?**
+
+Esta pregunta es la cara opuesta: si la participación alta refleja confianza y preparación, esperaríamos que los cursos o asignaturas con más presentados tuvieran también mejores resultados entre ellos. Ambas subpreguntas tienen sentido con estos datos porque las variables necesarias están disponibles directamente: matriculados, presentados y superados por asignatura y curso. El análisis se realizará sobre el porcentaje calculado sobre presentados, no sobre matriculados, para aislar el rendimiento de quienes efectivamente se examinaron y evitar que el denominador compartido contamine la asociación.
+
+## ¿Podemos considerar el porcentaje de no presentados como como un indicador de dificultad?
+
+Comenzamos hallando una variable que muestra el fenómeno, calculando el porcentaje de no presentados sobre presentados.
+
+Después, se ha definido la dificultad con la tasa de superación por presentados (tasa_supera) y la tasa de superación sobre los presentados (tasa_suspensos).
+
+Con estas variables se ha comprobado si pct_no_presentados se relaciona con peor rendimiento, estimando la asociación entre pct_no_presentados y tasa_supera (negativa si fuese indicador de la dificultad, ya que, tasa_supera aumenta cuando hay más éxito y si suben los no presentados, lo esperable es que baje la tasa de superación) y entre pct_no_presentados y tasa_suspensos (esperable positiva, ya que, aumenta cuando hay más fracaso entre los que se examinan y, si suben los no presentados, lo esperable es que suba el porcentaje de suspensos).
+
+pct_no_presentados ↑ -\> tasa_superados ↓
+
+pct_no_presentados ↑ -\> tasa_suspensos ↑
+
+La tasa de estudiantes que superan la asignatura indica que los estudiantes 'van bien' (por tanto debe bajar) y la tasa de estudiantes que suspenden indica que 'van mal', luego debe subir para confirmar esta teoría.
+
+Para medir la correlación entre dos variables, tenemos varios indicadores:
+
+**Pearson (r):** mide si, cuando sube el % de no presentados, el % de aprobados o suspensos cambia de forma más o menos en línea recta. En nuestro problema sirve como referencia 'lineal', pero puede distorsionarse si hay valores extremos o mucha concentración en 0% y 100%, que es nuestro caso.
+
+**Spearman (rho):** mira solo el orden. Responde a 'cuando hay más no presentados, normalmente hay más suspensos y menos aprobados, aunque la relación no sea una recta'. Además, es más robusta a outliers. Para nuestro caso es la mejor opción, ya que trabajamos con porcentajes y mucha dispersión.
+
+**Kendall (tau):** también mira el orden, pero comparando pares y contando cuántas veces se mantiene el mismo sentido. En nuestro caso es útil como comprobación robusta cuando hay muchos empates (muchas asignaturas con el mismo % de no presentados o el mismo % de aprobados/suspensos).
+
+```{r}
+
+
+df <- matriculados_aprobados %>%
+  mutate(
+    matriculados   = as.integer(`Nº matriculados`),
+    presentados    = as.integer(`Nº presentados`),
+    no_presentados = as.integer(`Nº no presentados`),
+    superan        = as.integer(`Nº que superan`),
+    MH             = as.integer(`Nº de MH`),
+    sobresalientes = as.integer(`Nº de SOB`),
+    notables       = as.integer(`Nº de NOT`),
+    aprobados      = as.integer(`Nº de APR`),
+    suspensos      = as.integer(`Nº de suspensos`)
+  ) %>%
+  filter(matriculados > 0) %>%
+  mutate(
+    pct_presentados       = presentados / matriculados,
+    pct_no_presentados    = no_presentados / matriculados,
+    pct_suspensos         = ifelse(presentados > 0, suspensos / presentados, NA_real_),
+    pct_superan           = ifelse(presentados > 0, superan / presentados, NA_real_),
+    tasa_supera_mat       = superan / matriculados,
+    tasa_suspensos_mat    = suspensos / matriculados
+  ) %>%
+  select(
+    Cód.,
+    Centro,
+    `Nombre Título`,
+    `código nombre asignatura`,
+    Curso,
+    matriculados,
+    presentados,
+    no_presentados,
+    superan,
+    MH,
+    sobresalientes,
+    notables,
+    aprobados,
+    suspensos,
+    pct_presentados,
+    pct_no_presentados,
+    pct_superan,
+    pct_suspensos,
+    tasa_supera_mat,
+    tasa_suspensos_mat
+  )
+
+#comprobación de normalidad, premisa para el test de Pearson
+shapiro_np   <- shapiro.test(sample(df$pct_no_presentados, 5000))
+shapiro_susp <- shapiro.test(sample(df$pct_suspensos[!is.na(df$pct_suspensos)], 5000))
+
+cat("Shapiro-Wilk % No presentados: p =", shapiro_np$p.value, "\n")
+cat("Shapiro-Wilk % Suspensos:      p =", shapiro_susp$p.value, "\n")
+
+#Creamos una función para aplicar los tres métodos a dos conjuntos de entrada (% no presentados y % aprobados/suspensos)
+cor_compare <- function(x, y, metodos = c("pearson", "spearman", "kendall")) {
+  #Con complete.cases solo nos quedamos con aquellas filas que estén completas.
+  ok <- complete.cases(x, y)
+  x2 <- x[ok]
+  y2 <- y[ok]
+
+  salida <- lapply(metodos, function(m) {
+    #exact=FALSE evita problemas de cálculo exacto cuando hay muchos empates o n grande
+    ct <- cor.test(x2, y2, method = m, exact = FALSE)
+    
+    data.frame(
+      method    = m,
+      estimate  = unname(ct$estimate),      #r (Pearson), rho (Spearman), tau (Kendall)
+      p_value   = ct$p.value,
+      row.names = NULL
+    )
+  })
+
+  do.call(rbind, salida)
+}
+
+#Correlación No presentados vs Tasa de superación (superan/matriculados)
+tab_np_supera <- cor_compare(
+  df$pct_no_presentados,
+  df$tasa_supera_mat
+)
+
+#Correlación No presentados vs Tasa de suspensos (suspensos/matriculados)
+tab_np_susp_mat <- cor_compare(
+  df$pct_no_presentados,
+  df$tasa_suspensos_mat
+)
+
+#Correlación No presentados vs Tasa de suspensos (suspensos/presentados)
+tab_np_susp_pres <- cor_compare(
+  df$pct_no_presentados,
+  df$pct_suspensos
+)
+
+#Correlación No presentados vs Tasa de suspensos (suspensos/presentados)
+tab_np_supera_pres <- cor_compare(
+  df$pct_no_presentados,
+  df$pct_superan
+)
+
+tab_np_supera_pres
+
+
+
+#Resumimos en una única tabla toda la información, para facilitar la comparación
+res_all <- bind_rows(
+  tab_np_supera       %>% mutate(analisis = "NP vs supera/matriculados"),
+  tab_np_susp_mat     %>% mutate(analisis = "NP vs suspensos/matriculados"),
+  tab_np_supera_pres  %>% mutate(analisis = "NP vs aprueban/presentados"),
+  tab_np_susp_pres    %>% mutate(analisis = "NP vs suspensos/presentados")
+)
+
+#Una fila por cada análisas y columna por cada método. Pasamos de tabla' larga' a 'ancha'
+tabla_4_estimaciones <- res_all %>%
+  select(analisis, method, estimate, p_value) %>%
+  pivot_wider(
+    id_cols     = analisis,
+    names_from  = method,
+    values_from = c(estimate, p_value),
+    names_glue  = "{method}_{.value}"
+  ) %>%
+  mutate(
+    across(ends_with("_estimate"), ~ round(as.numeric(.x), 4)),
+    across(ends_with("_p_value"),  ~ formatC(as.numeric(.x), format = "e", digits = 2))
+  ) %>%
+  relocate(
+    analisis,
+    pearson_estimate,   pearson_p_value,
+    spearman_estimate,  spearman_p_value,
+    kendall_estimate,   kendall_p_value
+  )
+
+tabla_4_estimaciones
+
+```
+
+Vemos que se cumple el test de shapiro, por tanto tiene sentido realizar el test de pearson. También, todos los p-value son prácticamente 0, permitiénsnos continuar con el análisis.
+
+En adelante, las tablas mostrarán únicamente los coeficientes de correlación y no los p-values. Esto se debe a que, con un dataset de más de 63.000 observaciones, todos los p-values obtenidos son prácticamente cero (p \< 2.2e-16). Los p-values fueron calculados y verificados en todos los análisis posteriores, confirmando en todos los casos significación estadística, pero se omiten de las tablas para no sobrecargar el documento.
+
+En las tablas vemos una gran diferencia si tomamos el porcentaje de suspensos o aprobados sobre matriculados o sobre presentados, ya que, al hacer el porcentaje sobre los matriculados, la relación sale contaminada. Esto se debe a que el pocentaje de no presentados y el porcentaje de aprobados y suspensos tienen el mismo denominador, luego cambian por pura aritmética y no por dificultad.
+
+Para evaluar la dificultad tiene más sentido hallar el porcentaje sobre los presentados, porque se aísla el resultado a quienes se han llegado a presentar.
+
+Vemos lo siguiente:
+
+-   **rho=-0.417** entre el porcentaje de no presentados y el porcentaje de estudiantes que superan la asignatura. Asociación negativa moderada. Donde hay más no presentados, los que sí se presentan tienden a aprobar menos.
+
+-   **rho=0,4279** entre el porcentaje de no presentados y el porcentaje de estudiantes que no superan la asignatura. Asociación positiva moderada. Donde hay más no presentados, los que sí se presentan tienden a suspender más.
+
+Por tanto, podemos concluir que el 'no presentado' funciona como un indicador de riesgo académico: cuando sube, el rendimiento académico empeora.
+
+Pese a ello, no podemos afirmar que sea un indicador de la dificultad, porque hay muchos factores que influyen en la dificultad: cambios de evaluación, covid, diferente profesorado...
+
+Procedemos a visualizar los datos. En adelante solo se tendrá en cuenta el porcentaje de suspensos/aprobados sobre los presentados.
+
+```{r}
+
+
+#Scatter plot de No presentados vs % suspensos sobre presentados
+ggplot(df, aes(pct_no_presentados, pct_suspensos)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = TRUE) +
+  scale_x_continuous(labels = percent) +
+  scale_y_continuous(labels = percent) +
+  labs(
+    x = "% No presentados (sobre matriculados)",
+    y = "% Suspensos (sobre presentados)",
+    title = "Asociación entre no presentados y suspensos (sobre presentados)"
+  )
+
+#Scatter plot de No presentados vs % aprobados sobre presentados
+ggplot(df, aes(pct_no_presentados, pct_superan)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = TRUE) +
+  scale_x_continuous(labels = percent) +
+  scale_y_continuous(labels = percent) +
+  labs(
+    x = "% No presentados (sobre matriculados)",
+    y = "% aprobados (sobre presentados)",
+    title = "Asociación entre no presentados y aprobados (sobre presentados)"
+  )
+```
+
+En ambas figuras cada punto representa una observación 'una asignatura en un curso académico'. En el eje X se representa el % de no presentados sobre matriculados y en el eje Y se representa el porcentaje de estudiantes que ha aprobado/suspendido de los que se han presentado. La línea azul indica la tendencia media, nos indica la dirección general.
+
+En la primera gráfica (% no presentados vs % suspensos sobre presentados), **la pendiente es positiva**: conforme aumenta el porcentaje de no presentados, tiende a aumentar el porcentaje de suspensos entre los que sí se presentan. por tanto, se aprecia que cuando más alumnado decide no ir al examen, el grupo que sí va suele rendir peor y suspende más, lo cual encaja con una 'mayor dificultad' o 'mayor riesgo académico'. Ahora bien, la nube es muy dispersa: para un mismo % de no presentados hay muchísimos valores posibles de suspensos, así que la señal existe pero no explica por sí sola la mayor parte de la variabilidad. Es por ello que hemos empezado a pensar que no se debe interpretar como 'indicador de dificultad', sino como 'riesgo académico'
+
+En la segunda gráfica (% no presentados vs % aprobados sobre presentados), **la pendiente es negativa**: conforme aumenta el porcentaje de no presentados, tiende a disminuir el porcentaje de aprobados entre los presentados. Es la misma historia contada al revés: si suben los suspensos, bajan los aprobados, y la tendencia sugiere que un mayor 'no presentarse' se asocia con peor rendimiento de quienes sí se examinan.
+
+Estos resultados se corresponden con las afirmaciones que habíamos realizado al ver la correlación de spearman. Aun así, Hay dos detalles visuales importantes para interpretar bien ambas figuras.
+
+-   Primero, la gran 'columna' en X = 0% indica que en muchas observaciones no hubo no presentados, por eso se acumulan puntos ahí.
+
+-   Segundo, las bandas en Y = 0% y Y = 100% suelen aparecer cuando hay pocos presentados: con muy poca gente es fácil que salga que todos aprueban o todos suspenden, y eso mete ruido y extremos. Esto nos da pistas de que, para poder medir el riesgo académico con más solidez, debemos ponderar el número de presentados con un modelo binomial o revisar si la tendencia se mantiene al filtrar asignaturas con muy bajo número de no presentados.
+
+Como conclusión, vemos que la evidencia gráfica apoya que el porcentaje de no presentados puede funcionar como señal de dificultad o de riesgo, porque se asocia a más suspensos y menos aprobados entre quienes se presentan. Pero, el efecto es moderado y no causal, debemos corroborarlo con un análisis ponderado y controles por curso, centro o titulación.
+
+Procedemos a estudiar este efecto por centro, asignatura, curso y rama de conocimiento
+
+# Análisis por centros
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(broom)
+library(purrr)
+
+res_cor_centro <- df %>%
+  group_by(Centro) %>%
+  summarise(
+    n = sum(complete.cases(pct_no_presentados, pct_superan, pct_suspensos)),
+    rho_superan = suppressWarnings(cor(pct_no_presentados, pct_superan, method = "spearman",
+                                       use = "complete.obs")),
+    p_superan = {
+      tt <- suppressWarnings(cor.test(pct_no_presentados, pct_superan,
+                                      method = "spearman", use = "complete.obs"))
+      tt$p.value
+    },
+    rho_suspensos = suppressWarnings(cor(pct_no_presentados, pct_suspensos, method = "spearman",
+                                         use = "complete.obs")),
+    p_suspensos = {
+      tt <- suppressWarnings(cor.test(pct_no_presentados, pct_suspensos,
+                                      method = "spearman", use = "complete.obs"))
+      tt$p.value
+    },
+    .groups = "drop"
+  ) %>%
+  select(
+    Centro,n,rho_superan,rho_suspensos,
+  ) %>%
+  arrange((rho_superan))
+
+res_cor_centro
+```
+
+Una vez tenemos una tabla con toda la información de cada centro, procedemos a analizarla
+
+Para ello, vamos a hallar:
+
+-   **Mediante visualizaciones**:
+    -   Centros más afectados, entendiendo como afectado que el rho es más negativo (pct_superan) o positivo (pct_suspensos)
+    -   Diferencias en el porcentaje de suspensos y aprobados al aumentar el número de no presentados.
+-   **Numéricamente:**
+    -   Cuantos puntos aumenta el porcentaje de suspensos y aprobados por cada punto de no presentados.
+
+Comenzando mostrando los centros más afectados
+
+```{r}
+q_low  <- quantile(df$pct_no_presentados, 0.25, na.rm = TRUE)
+q_high <- quantile(df$pct_no_presentados, 0.75, na.rm = TRUE)
+
+ggplot(
+  res_cor_centro %>%
+    filter(!is.na(rho_superan)) %>%
+    arrange(rho_superan) %>%
+    mutate(Centro = factor(Centro, levels = Centro)),
+  aes(x = Centro, y = rho_superan, size = n, color = abs(rho_superan))
+) +
+  geom_point(alpha = 0.8) +
+  coord_flip() +
+  scale_color_gradient(low = "pink", high = "red", name = "|rho|") +
+  scale_size_continuous(name = "n (observaciones)", range = c(1, 8)) +
+  labs(
+    title = "Centros: rho Spearman (%NP vs %Superan)",
+    x = "Centro", y = "rho Spearman"
+  )
+
+ggplot(
+  res_cor_centro %>%
+    filter(!is.na(rho_suspensos)) %>%
+    arrange(desc(rho_suspensos)) %>%
+    mutate(Centro = factor(Centro, levels = Centro)),
+  aes(x = Centro, y = rho_suspensos, size = n, color = abs(rho_suspensos))
+) +
+  geom_point(alpha = 0.8) +
+  coord_flip() +
+  scale_color_gradient(low = "pink", high = "red", name = "|rho|") +
+  scale_size_continuous(name = "n (observaciones)", range = c(1, 8)) +
+  labs(
+    title = "Centros: rho Spearman (%No presentados vs %Suspensos sobre presentados)",
+    x = "Centro", y = "rho Spearman"
+  )
+```
+
+En estas dos gráficas, cada punto es un centro y el valor del eje X es la correlación de Spearman (rho) calculada dentro de ese centro usando todas sus asignaturas y cursos. La intención es comprobar qué ocurre cuando aumenta el número de no presentados.
+
+En la primera gráfica (% No presentados vs % aprobados) se ve claramente que todos los centros obtienen valores negativos (aprox. de -0.55 a -0.08). Eso significa que, en general, cuanto mayor es el % de no presentados, menor es el porcentaje de aprobados entre los que se presentan. Para el problema que se está trabajando, esto es justo la señal buscada, sugiere que el % de no presentados puede funcionar como indicador de dificultad o de riesgo.
+
+Destaca una relación más fuerte en los siguientes centros: Turismo y Finanzas, Química, Escuela Politécnica Superior, Ingeniería de Edificación, y centros de enfermería (valores cercanos a -0.5)
+
+En el caso contrario, tenemos la Escuela Internacional de Posgrado aparece muy cerca de 0 (aprox. -0.08), lo que sugiere que en los másters no presentarse no está tan alineado con 'aprobar menos' entre presentados. Puede deberse a las diferencias entre grados y másters. Por ello, trataremos las asignaturas de posgrado como una rama de conocimiento adicional, para profundizar en sus características.
+
+En la segunda gráfica (% No presentados vs % suspensos) Aquí todo sale positivo (aprox. 0.08 a 0.56). Se lee igual pero al revés: a más no presentados, más suspensos entre los presentados. El ranking es casi el mismo que en la primera, porque aprobar y suspender (sobre presentados) suelen ser complementarios.
+
+Destacamos lo siguiente:
+
+-   Los centros que antes salían 'más negativos' (mejor indicador para aprobar) aquí salen 'más positivos' (mejor indicador para suspender). De nuev,o destacan Turismo y Finanzas, Química, EPS, Ing. de Edificación.
+
+Posgrado vuelve a salir con una asociación muy débil, por lo que no se cumple la relación que estamos buscando.
+
+Concluimos lo siguiente:
+
+En la mayoría de centros, el patrón es consistente: más no presentados se asocia con peor rendimiento entre los que sí van al examen. Eso apoya el uso del porcentaje de no presentados como indicador, pero no con la misma fuerza en todos los centros: hay centros donde el indicador 'funciona' mucho mejor que en otros.
+
+Continuamos viendo las diferencias dentro de cada centro. En este caso, vemos si hay diferencias cuando hay un mayor número de no presentados
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+#Comenzamos hallando cuantos años ha aparecido una asignatura y sus tasas de aprobados y presentados
+
+centro_anyo <- df %>%
+  group_by(Centro, Curso) %>%
+  summarise(
+    matriculados_tot = sum(matriculados, na.rm = TRUE),
+    presentados_tot  = sum(presentados, na.rm = TRUE),
+    no_present_tot   = sum(no_presentados, na.rm = TRUE),
+    superan_tot      = sum(superan, na.rm = TRUE),
+    suspensos_tot    = sum(suspensos, na.rm = TRUE),
+
+    np_rate   = ifelse(matriculados_tot > 0, no_present_tot / matriculados_tot, NA_real_),
+    sup_rate  = ifelse(presentados_tot  > 0, superan_tot / presentados_tot, NA_real_),
+    susp_rate = ifelse(presentados_tot  > 0, suspensos_tot / presentados_tot, NA_real_),
+
+    .groups = "drop"
+  )
+
+#Ahora comparamos los dos mejores años (menos no presentados) con los dos peores años (más no presentados)
+k <- 2
+
+centro_2v2 <- centro_anyo %>%
+  filter(complete.cases(np_rate, sup_rate, susp_rate)) %>%
+  group_by(Centro) %>%
+  arrange(np_rate, .by_group = TRUE) %>%
+  summarise(
+    n_anyos = n(),
+
+    np_best   = mean(head(np_rate, k),  na.rm = TRUE),
+    sup_best  = mean(head(sup_rate, k), na.rm = TRUE),
+    susp_best = mean(head(susp_rate, k), na.rm = TRUE),
+
+    np_worst   = mean(tail(np_rate, k),  na.rm = TRUE),
+    sup_worst  = mean(tail(sup_rate, k), na.rm = TRUE),
+    susp_worst = mean(tail(susp_rate, k), na.rm = TRUE),
+
+    delta_np   = np_worst - np_best,
+    delta_sup  = sup_worst - sup_best,
+    delta_susp = susp_worst - susp_best,
+
+    best_years  = paste(head(Curso, k), collapse = ", "),
+    worst_years = paste(tail(Curso, k), collapse = ", "),
+
+    centro = first(Centro),
+    .groups = "drop"
+  ) %>%
+  filter(n_anyos >= 2 * k) %>%
+  mutate(
+    delta_np_pp   = 100 * delta_np,
+    delta_sup_pp  = 100 * delta_sup,
+    delta_susp_pp = 100 * delta_susp
+  ) %>%
+  arrange(desc(n_anyos))
+
+#Diferencia en cuanto al porcentaje de estudiantes que superan.
+ggplot(
+  centro_2v2 %>%
+    arrange(delta_sup_pp) %>%
+    mutate(centro = factor(centro, levels = unique(centro))),
+  aes(x = centro, y = delta_sup_pp, fill = abs(delta_sup_pp))
+) +
+  geom_col() +
+  coord_flip() +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.6) +
+  scale_y_continuous(labels = function(x) paste0(sprintf("%.1f", x), " pp")) +
+  scale_fill_gradient(low = "white", high = "red", name = "|Δ| (pp)") +
+  labs(
+    title = "Centros: Δ %Superan (pp) (2 peores años NP - 2 mejores años NP) [centro-año]",
+    x = "Centro",
+    y = "Δ (puntos porcentuales)"
+  ) +
+  guides(fill = "none") +
+  theme_minimal()
+
+#Diferencia en cuanto al porcentaje de estudiantes que suspenden
+ggplot(
+  centro_2v2 %>%
+    arrange(desc(delta_susp_pp)) %>%
+    mutate(centro = factor(centro, levels = unique(centro))),
+  aes(x = centro, y = delta_susp_pp, fill = abs(delta_susp_pp))
+) +
+  geom_col() +
+  coord_flip() +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.6) +
+  scale_y_continuous(labels = function(x) paste0(sprintf("%.1f", x), " pp")) +
+  scale_fill_gradient(low = "white", high = "red", name = "|Δ| (pp)") +
+  labs(
+    title = "Centros: Δ %Suspensos (pp) (2 peores años NP - 2 mejores años NP) [centro-año]",
+    x = "Centro",
+    y = "Δ (puntos porcentuales)"
+  ) +
+  guides(fill = "none") +
+  theme_minimal()
+
+#Vemos la información resumida en una tabla.
+tabla_aux <- centro_2v2 %>%
+  arrange(desc(delta_susp_pp)) %>%
+  select(
+    centro, n_anyos,
+    best_years, np_best, sup_best, susp_best,
+    worst_years, np_worst, sup_worst, susp_worst,
+    delta_np, delta_sup, delta_susp,
+    delta_np_pp, delta_sup_pp, delta_susp_pp
+  )
+
+tabla_resumen <- centro_2v2 %>%
+  transmute(
+    centro,
+    best_years, worst_years,
+    np_best, np_worst,
+    delta_np_pp,
+    susp_best, susp_worst,
+    delta_susp_pp,
+    sup_best, sup_worst,
+    delta_sup_pp
+  ) %>%
+  arrange(desc(delta_susp_pp))
+
+tabla_resumen
+```
+
+En estas dos gráficas se agregan todas las asignaturas de un centro por año, se calcula el % de no presentados sobre matriculados (np_rate) y, por separado, el % que aprueba y suspende entre los presentados (sup_rate y susp_rate). Después, para cada centro, se toman los 2 años con menos no presentados (mejores) y los 2 años con más no presentados (peores) y se representa la diferencia (peores - mejores)
+
+En la primera gráfica (Δ %Superan), casi todos los centros salen en negativo. Eso significa que, cuando un centro entra en sus años con más no presentados, en promedio baja el porcentaje de aprobados entre quienes sí se presentan, normalmente entre 1 y 6 puntos porcentuales. Lo interesante es que hay centros donde el efecto es especialmente fuerte, como en la E.T.S. de Ingeniería de Edificación y Farmacia (caídas cercanas a 6 puntos), y otros como Ciencias del Trabajo, Escuela Politécnica Superior, Filología, Química o EUSA con descensos relevantes.
+
+En cambio, destaca una excepción clara: la Escuela Internacional de Posgrado, donde la barra es positiva (aprox. +2 puntos), es decir, en sus años con más no presentados la tasa de aprobados entre presentados mejora, lo cual indica que no siempre se da el patrón que estamos estudiando.
+
+En la segunda gráfica (Δ %Suspensos) ocurre lo mismo pero al contrario: casi todos los centros están en positivo, es decir, en los años con más no presentados sube el porcentaje de suspensos entre presentados, con picos cercanos a 6 puntos en Ingeniería de Edificación y Farmacia. Esta gráfica, además, es prácticamente el espejo de la primera por una razón matemática: si se está usando 'superan' y 'suspensos' como partición de los presentados, entonces sup_rate + susp_rate ≈ 1, y por tanto delta_susp ≈ -delta_sup. Que ambas salgan tan coherentes refuerza que el patrón es estable.
+
+Estas gráficas dan más peso a la información que nos han dado las anteriores gráficas, ya que, este enfoque está dando un mensaje muy similar al de las correlaciones de Spearman por centro, pero con una lectura más interpretativa, no solo se dice que hay asociación, sino que se cuantifica cuánto cambian los resultados cuando el centro pasa de años con pocos no presentados a años con muchos no presentados.
+
+Cabe destacar que en los centros más afectados los peores cursos más repetidos son el 2021-2022 y 2022-2023 y en los cursos menos afectados, los peores cursos son el 2017-2018 y el 2018-2019. Pese a detectar este patrón, no somos sabemos a qué se debe. Lo más probable es que haya un contexto que desconocemos.
+
+Vemos como por cada punto extra de no presentados, aumentan los suspensos.
+
+```{r}
+tabla_efecto_normalizado <- centro_2v2 %>%
+  filter(delta_np > 0) %>%  #evita divisiones por 0
+  mutate(
+    eff_susp_por_np = delta_susp / delta_np,  #puntos de suspenso por punto de NP (en escala 0-1)
+    eff_sup_por_np  = delta_sup  / delta_np#puntos de aprobados por punto de NP (en escala 0-1)
+  ) %>%
+  transmute(
+    centro, best_years, worst_years,
+    delta_np_pp   = 100 * delta_np,
+    delta_susp_pp = 100 * delta_susp,
+    delta_sup_pp  = 100 * delta_sup,
+    #efecto por 1 punto porcentual de NP
+    eff_susp_por_1pp_np = eff_susp_por_np,  
+    eff_sup_por_1pp_np  = eff_sup_por_np
+  ) %>%
+  arrange(desc(eff_susp_por_1pp_np))
+
+tabla_efecto_normalizado
+
+```
+
+Con esta tabla convertimos la información de la anterior gráfica en una idea muy simple:'si en un centro el porcentaje de no presentados sube X puntos, ¿cuántos puntos sube el porcentaje de suspensos entre presentados?'.
+
+Para eso, se calcula delta_np (aumento de no presentados entre los 2 peores años y los 2 mejores) y delta_susp (cambio de suspensos entre presentados en esos mismos años), y luego se divide: eff_susp_por_1pp_np = delta_susp / delta_np. El resultado se interpreta como puntos de suspenso por cada 1 punto porcentual extra de no presentados
+
+En las primeras filas aparecen efectos muy altos: por ejemplo, en el Centro Universitario de Osuna, eff_susp_por_1pp_np = 1.7356. Eso significa que, en ese centro, si el no presentado sube 1 punto, los suspensos entre presentados suben 1.74 puntos. En el Centro Universitario EUSA se obtiene eff_susp_por_1pp_np=0.9278 indicando casi '1 a 1'.
+
+En general, los valores alrededor de 0.8–0.9 (que se repiten) sugieren un patrón fuerte y bastante coherente: 'suben los no presentados y casi en la misma magnitud suben los suspensos'.
+
+En la parte media aparecen efectos moderados (por ejemplo, 0.59, 0.57, 0.48, 0.41, 0.38, 0.30…) aportando señal, pero no demasiado.
+
+Al final aparecen filas donde delta_susp_pp es negativo o casi cero, y por tanto eff_susp_por_1pp_np sale negativo o cercano a 0 (por ejemplo, -0.0205 o -0.0852). Eso significa que, en esos centros, al pasar de 'pocos no presentados' a 'muchos no presentados', no aumentan los suspensos entre presentados, incluso bajan. Esto es perfectamente posible si en los años con más no presentados ocurre una selección: se presenta menos gente, pero más preparada o si hay cambios de evaluación, coordinación, etc. Estos centros son la evidencia de que el indicador no es universal.
+
+Analizamos dos observaciones clave para interpretar con rigor:
+
+-   eff_sup_por_1pp_np sale casi siempre con el mismo valor pero negativo, porque aprobar y suspender sobre presentados son complementarios. Por eso, cuando el efecto en suspensos es +0.82 pp por 1 pp de no presentados, el efecto en aprobados tiende a ser -0.82 pp. No es 'otra evidencia distinta', es el mismo fenómeno expresado al revés.
+
+-   Los valores muy altos (por encima de 1) aparecen cuando delta_np_pp es relativamente pequeño Con poco cambio en no presentados, una variación moderada en suspensos produce una pendiente grande.
+
+Por tanto, la tabla apoya que, en la mayoría de centros, a mayor número de no presentados, peor rendimiento entre quienes se presentan, y además cuantifica 'cuánto' en puntos porcentuales. Sin embargo, también muestra excepciones donde el patrón se rompe o se invierte, lo que obliga a formular la interpretación con cuidado. El porcentaje de no presentados parece un indicador de riesgo/dificultad, pero su validez depende del centro y probablemente de factores contextuales (cambios de evaluación, composición del alumnado, etc.).
+
+Mostramos la información gráficamente.
+
+```{r}
+ef_centro_unico <- tabla_efecto_normalizado %>%
+  filter(is.finite(eff_susp_por_1pp_np)) %>%
+  group_by(centro) %>%
+  slice_max(eff_susp_por_1pp_np, n = 1, with_ties = FALSE) %>%
+  ungroup()
+
+top5 <- ef_centro_unico %>%
+  slice_max(eff_susp_por_1pp_np, n = 5, with_ties = FALSE) %>%
+  mutate(grupo = "TOP 5")
+
+bottom5 <- ef_centro_unico %>%
+  slice_min(eff_susp_por_1pp_np, n = 5, with_ties = FALSE) %>%
+  mutate(grupo = "BOTTOM 5")
+
+#Mostramos gráficamente los 5 centros más afectados y los 5 centros menos afectados
+
+#Comenzamos por los centros con mayor diferencia en cuanto al aumento del porcentaje de suspensos  
+ggplot(
+  top5,
+  aes(
+    x = reorder(centro, eff_susp_por_1pp_np),
+    y = eff_susp_por_1pp_np,
+    fill = abs(eff_susp_por_1pp_np)
+  )
+) +
+  geom_col() +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.6) +
+  coord_flip() +
+  scale_fill_gradient(low = "#FFEBEB", high = "#FF6F61", name = "|Efecto|") +
+  labs(
+    title = "Mayor diferencia - TOP 5",
+    x = "Centro",
+    y = "Efecto (pp de suspensos por 1pp de NP)"
+  ) +
+  guides(fill = "none") +
+  theme_minimal(base_size = 12) +
+  theme(panel.grid.minor = element_blank())
+
+#Comenzamos por los centros con menor diferencia en cuanto al aumento del porcentaje de suspensos 
+ggplot(
+  bottom5,
+  aes(
+    x = reorder(centro, eff_susp_por_1pp_np),
+    y = eff_susp_por_1pp_np,
+    fill = abs(eff_susp_por_1pp_np)
+  )
+) +
+  geom_col() +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.6) +
+  coord_flip() +
+  scale_fill_gradient(low = "#FFEBEB", high = "#FF6F61", name = "|Efecto|") +
+  labs(
+    title = "Menor diferencia - BOTTOM 5",
+    x = "Centro",
+    y = "Efecto (pp de suspensos por 1pp de NP)"
+  ) +
+  guides(fill = "none") +
+  theme_minimal(base_size = 12) +
+  theme(panel.grid.minor = element_blank())
+```
+
+## Clasificación para centros
+
+Con toda la información que hemos obtenido, el siguiente paso lógico sería clasificar los centros según su nivel de rendimiento académico y participación (su estado actual) y su nivel de riesgo académico (si un aumento grande en el porcentaje de no presentados hace que aumente mucho el porcentaje de suspensos). Para ello, hallamos:
+
+**1.-** **Tasas globales por centro** (% medio de no presentados, % medio de suspensos, % medio de aprobados)
+
+**2.-** **Las variaciones entre el mejor y peor año**
+
+**3.-** **Percentiles para decidir que es alto/medio/bajo**
+
+**4.- Combinar rendimiento con participación y estabilidad para dar una clasificación**
+
+En primer lugar, para cada centro se agregaron todos los cursos disponibles y se calcularon tasas globales: el porcentaje de no presentados sobre matriculados (np_rate = no_present/matriculados) y el porcentaje de suspensos entre quienes se presentan (susp_rate = suspensos/presentados), junto con la tasa de aprobados entre presentados (pass_rate = superan/presentados).
+
+En segundo lugar, con las tasas anuales por centro se estimó la variabilidad temporal mediante la 'brecha' entre el peor y el mejor curso observado: susp_gap = max(susp_rate) - min(susp_rate) y np_gap = max(np_rate) - min(np_rate), considerando únicamente centros con al menos dos cursos para que dicha brecha fuese interpretable.
+
+A continuación, se definieron umbrales (con percentiles) para categorizar los centros. En concreto, se clasificó cada nivel de rendimiento académico como 'bajo', 'medio' o 'alto' en suspensos y no presentación usando los percentiles 25 y 75: valores por debajo de P25 se etiquetaron como 'bajo', valores por encima de P75 como 'alto y el resto como 'medio'.
+
+Con estas bandas se construyó una categoría base que resume el estado del centro combinando participación y rendimiento: 'Excelencia sostenible' (suspensos bajos y no presentados bajos), 'Buen rendimiento, baja participación' (suspensos bajos y no presentados altos), 'Rendimiento frágil, buena participación' (suspensos altos y no presentados bajos) y 'Riesgo crítico' (suspensos altos y no presentados altos), dejando como 'Intermedio/estándar' los casos que no caen en los extremos.
+
+Finalmente, se añadió una etiqueta de estabilidad: se consideró 'Volátil' si la brecha anual (susp_gap o np_gap) se situaba en el cuartil superior (≥ P75 de las brechas), y 'Estable/moderado' en caso contrario. la categoría final se expresa como la categoría base seguida de su estabilidad correspondiente.
+
+```{r}
+# 1) Hallamos el total de matriculados, presentados, no presentados, suspensos y aprobados de cada centro. Además, calculamos el porcentaje de no presentados y el porcentaje de aprobados/suspensos por presentados
+centro_curso <- df %>%
+  group_by(Centro, Curso) %>%
+  summarise(
+    matriculados_tot = sum(matriculados, na.rm = TRUE),
+    presentados_tot  = sum(presentados, na.rm = TRUE),
+    no_present_tot   = sum(no_presentados, na.rm = TRUE),
+    superan_tot      = sum(superan, na.rm = TRUE),
+    suspensos_tot    = sum(suspensos, na.rm = TRUE),
+
+    np_rate   = ifelse(matriculados_tot > 0, no_present_tot / matriculados_tot, NA_real_),
+    sup_rate  = ifelse(presentados_tot  > 0, superan_tot / presentados_tot, NA_real_),
+    susp_rate = ifelse(presentados_tot  > 0, suspensos_tot / presentados_tot, NA_real_),
+
+    .groups = "drop"
+  ) %>%
+  mutate(
+    centro = as.character(Centro),
+    curso  = as.character(Curso)
+  )
+
+#hallamos métricas globales por centro (sumando todos los años)
+centro_sum <- centro_curso %>%
+  group_by(centro) %>%
+  summarise(
+    matriculados = sum(matriculados_tot, na.rm = TRUE),
+    presentados  = sum(presentados_tot,  na.rm = TRUE),
+    no_present   = sum(no_present_tot,   na.rm = TRUE),
+    suspensos    = sum(suspensos_tot,    na.rm = TRUE),
+    superan      = sum(superan_tot,      na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    susp_rate = ifelse(presentados > 0, suspensos / presentados, NA_real_),
+    pass_rate = ifelse(presentados > 0, superan   / presentados, NA_real_),
+    np_rate   = ifelse(matriculados > 0, no_present / matriculados, NA_real_),
+    pres_rate = ifelse(matriculados > 0, presentados / matriculados, NA_real_)
+  ) %>%
+  filter(!is.na(susp_rate), !is.na(np_rate))
+
+# brecha temporal por centro: peor año vs mejor año
+brechas <- centro_curso %>%
+  group_by(centro) %>%
+  summarise(
+    #suspensos: peor = max, mejor = min
+    susp_worst = max(susp_rate, na.rm = TRUE),
+    susp_best  = min(susp_rate, na.rm = TRUE),
+    susp_gap   = susp_worst - susp_best,
+
+    #no presentación: peor = max, mejor = min
+    np_worst = max(no_present_tot / matriculados_tot, na.rm = TRUE),
+    np_best  = min(no_present_tot / matriculados_tot, na.rm = TRUE),
+    np_gap   = np_worst - np_best,
+
+    #número de cursos con datos para saber si la brecha es fiable
+    n_cursos = sum(!is.na(susp_rate) & !is.na(matriculados_tot) & matriculados_tot > 0),
+    .groups = "drop"
+  ) %>%
+  #si un centro solo tiene 1 curso, la brecha no tiene sentido. La ponemos a 0 o NA
+  mutate(
+    susp_gap = ifelse(n_cursos >= 2, susp_gap, NA_real_),
+    np_gap   = ifelse(n_cursos >= 2, np_gap,   NA_real_)
+  )
+
+#Unimos las brechas
+centro_full <- centro_sum %>%
+  left_join(brechas, by = "centro")
+
+#umbrales por percentiles para rendimiento/participación 
+p25_susp <- quantile(centro_full$susp_rate, 0.25, na.rm = TRUE)
+p75_susp <- quantile(centro_full$susp_rate, 0.75, na.rm = TRUE)
+p25_np   <- quantile(centro_full$np_rate,   0.25, na.rm = TRUE)
+p75_np   <- quantile(centro_full$np_rate,   0.75, na.rm = TRUE)
+
+#Umbral de volatilidad: brecha alta P75
+p75_susp_gap <- quantile(centro_full$susp_gap, 0.75, na.rm = TRUE)
+p75_np_gap   <- quantile(centro_full$np_gap,   0.75, na.rm = TRUE)
+
+centro_clasif <- centro_full %>%
+  mutate(
+    susp_band = case_when(
+      susp_rate <= p25_susp ~ "bajo",
+      susp_rate >= p75_susp ~ "alto",
+      TRUE                  ~ "medio"
+    ),
+    np_band = case_when(
+      np_rate <= p25_np ~ "bajo",
+      np_rate >= p75_np ~ "alto",
+      TRUE              ~ "medio"
+    ),
+
+    #etiqueta de estabilidad
+    estabilidad = case_when(
+      !is.na(susp_gap) & !is.na(np_gap) &
+        (susp_gap >= p75_susp_gap | np_gap >= p75_np_gap) ~ "Volátil (gran brecha anual)",
+      !is.na(susp_gap) | !is.na(np_gap) ~ "Estable / moderado",
+      TRUE ~ "Sin serie suficiente"
+    ),
+
+    categoria_base = case_when(
+      susp_band == "bajo" & np_band == "bajo" ~ "Excelencia sostenible",
+      susp_band == "bajo" & np_band == "alto" ~ "Buen rendimiento, baja participación",
+      susp_band == "alto" & np_band == "bajo" ~ "Rendimiento frágil, buena participación",
+      susp_band == "alto" & np_band == "alto" ~ "Riesgo crítico",
+      TRUE                                    ~ "Intermedio / estándar"
+    ),
+
+    #categoría base con estabilidad
+    categoria = paste0(categoria_base, " | ", estabilidad)
+  ) %>%
+  arrange(categoria_base, desc(np_rate), desc(susp_rate))
+
+centro_clasif
+
+tabla_resumen <- centro_clasif %>% select(centro, categoria)
+tabla_resumen
+
+
+#Mostramos los percentiles para comprobar que realmente son valores extremos
+
+p25_susp <- quantile(centro_full$susp_rate, 0.25, na.rm = TRUE)
+p75_susp <- quantile(centro_full$susp_rate, 0.75, na.rm = TRUE)
+
+p25_np   <- quantile(centro_full$np_rate,   0.25, na.rm = TRUE)
+p75_np   <- quantile(centro_full$np_rate,   0.75, na.rm = TRUE)
+
+p75_susp_gap <- quantile(centro_full$susp_gap, 0.75, na.rm = TRUE)
+p75_np_gap   <- quantile(centro_full$np_gap,   0.75, na.rm = TRUE)
+
+umbrales_percentiles <- tibble::tibble(
+  umbral = c("P25 susp_rate", "P75 susp_rate", "P25 np_rate", "P75 np_rate",
+             "P75 susp_gap", "P75 np_gap"),
+  valor = c(p25_susp, p75_susp, p25_np, p75_np, p75_susp_gap, p75_np_gap)
+)
+
+umbrales_percentiles
+
+```
+
+Vemos gráficamente el resultado
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(tidyr)
+
+centros_plot <- centro_clasif %>%
+  mutate(
+    categoria_base = sub(" \\|.*$", "", categoria),
+    estabilidad    = sub("^.*\\| ", "", categoria)
+  )
+
+cols_cat <- c(
+  "Excelencia sostenible"                 = "#1b9e77",
+  "Buen rendimiento, baja participación"  = "#66a61e",
+  "Intermedio / estándar"                 = "#7570b3",
+  "Rendimiento frágil, buena participación" = "#e6ab02",
+  "Riesgo crítico"                        = "#d95f02"
+)
+
+ggplot(
+  centros_plot,
+  aes(x = np_rate, y = susp_rate, size = presentados, color = categoria_base)
+) +
+  geom_point(alpha = 0.70) +
+  geom_text(aes(label = centro), check_overlap = TRUE, vjust = -0.7, size = 3) +
+  facet_wrap(~ estabilidad) +
+  scale_x_continuous(labels = percent_format(accuracy = 1)) +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  scale_color_manual(values = cols_cat, name = "Categoría base") +
+  labs(
+    title = "Centros: no presentación vs suspensos (tamaño = presentados, color = categoría base)",
+    x = "Tasa de no presentación (no_present / matriculados)",
+    y = "Tasa de suspensos (suspensos / presentados)",
+    size = "Presentados (peso)"
+  ) +
+  theme_minimal()
+
+
+
+orden_cat <- names(cols_cat)
+
+#heatmap para ver gráficamente dónde queda cada centro
+tabla_cat <- centros_plot %>%
+  mutate(categoria_base = factor(categoria_base, levels = orden_cat)) %>%
+  count(categoria_base, estabilidad, name = "n") %>%
+  filter(n >= 1)
+
+ggplot(tabla_cat, aes(x = estabilidad, y = categoria_base, fill = categoria_base)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = n), size = 4) +
+  scale_fill_manual(values = cols_cat, name = "Categoría base") +
+  labs(
+    title = "Distribución de centros por categoría y estabilidad (solo celdas con centros)",
+    x = "Estabilidad",
+    y = "Categoría base"
+  ) +
+  theme_minimal()
+
+```
+
+En el heatmap casi todo cae en Estable/moderado: 17 centros están en Intermedio/estándar y 10 en Excelencia sostenible. Solo hay 1 centro sin serie y 3 centros volátiles, todos en Intermedio/estándar.
+
+En el bubble plot se ve lo mismo, la mayoría de centros se agrupa en el panel Estable/moderado (zonas de tasas medias). Los volátiles aparecen en el panel derecho y están en valores relativamente altos de suspensos y, en general, con no presentación no baja.
+
+Gracias a los percentiles podemos definir qué es 'alto', 'medio' y 'bajo', lo cual puede ser problemático. Además, podemos tener una visión general del estado de cada centro.
+
+Aun así, los umbrales no nos indican realmente que valores representan un buen rendimiento o no, ya que, al tomar percentiles, siempre clasifican centros como Volátiles y de riesgo crítico. Por ello, pasamos a una clasificación más realista donde los umbrales sean realmente indicadores de un buen y mal rendimiento.
+
+Los cambios que se van a realizar se hacen para que la categoría base se decida con umbrales fijos, no percentiles:
+
+Suspensos: bajo ≤ 10%, alto ≥ 25%
+
+No presentación: bajo ≤ 8%, alto ≥ 25%
+
+Con eso se etiqueta como 'Excelencia sostenible' (bajo-bajo) o 'Intermedio/estándar' (lo que no cae en extremos).
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+#Definimos los umbrales para la tasa de suspensos
+thr_susp_low  <- 0.10
+thr_susp_high <- 0.25
+
+#Definimos los umbrales para la tasa de no presentados
+thr_np_low  <- 0.08
+thr_np_high <- 0.25
+
+#Definimos los umbrales de volatilidad (brecha peor año - mejor año)
+# Se considera 'gran brecha' si cambia alguna de estos dos criterios:
+#   - suspensos: 10 puntos porcentuales entre años
+#   - no presentación: 10 puntos porcentuales entre años
+thr_susp_gap <- 0.1
+thr_np_gap   <- 0.1
+
+#Mínimo de serie para hablar de brecha
+min_cursos_brecha <- 2
+
+
+centro_clasif <- centro_full %>%
+  mutate(
+    susp_band = case_when(
+      susp_rate <= thr_susp_low  ~ "bajo",
+      susp_rate >= thr_susp_high ~ "alto",
+      TRUE                       ~ "medio"
+    ),
+    np_band = case_when(
+      np_rate <= thr_np_low  ~ "bajo",
+      np_rate >= thr_np_high ~ "alto",
+      TRUE                   ~ "medio"
+    ),
+
+    estabilidad = case_when(
+      !is.na(susp_gap) & !is.na(np_gap) &
+        (susp_gap >= thr_susp_gap | np_gap >= thr_np_gap) ~ "Volátil (gran brecha anual)",
+      !is.na(susp_gap) | !is.na(np_gap) ~ "Estable / moderado",
+      TRUE ~ "Sin serie suficiente"
+    ),
+
+    categoria_base = case_when(
+      susp_band == "bajo" & np_band == "bajo" ~ "Excelencia sostenible",
+      susp_band == "bajo" & np_band == "alto" ~ "Buen rendimiento, baja participación",
+      susp_band == "alto" & np_band == "bajo" ~ "Rendimiento frágil, buena participación",
+      susp_band == "alto" & np_band == "alto" ~ "Riesgo crítico",
+      TRUE                                    ~ "Intermedio / estándar"
+    ),
+
+    categoria = paste0(categoria_base, " | ", estabilidad)
+  ) %>%
+  arrange(categoria_base, desc(np_rate), desc(susp_rate))
+
+
+#Mostramos la nueva clasificación
+
+centros_plot <- centro_clasif %>%
+  mutate(
+    categoria_base = sub(" \\|.*$", "", categoria),
+    estabilidad    = sub("^.*\\| ", "", categoria)
+  )
+
+tabla_cat <- centros_plot %>%
+  count(categoria_base, estabilidad, name = "n_celda") %>%
+  mutate(
+    densidad_cat = case_when(
+      n_celda == 1            ~ "Muy baja",
+      n_celda == 2            ~ "Baja",
+      n_celda %in% 3:4        ~ "Media",
+      n_celda %in% 5:7        ~ "Alta",
+      n_celda >= 8            ~ "Muy alta",
+      TRUE                    ~ "Muy baja"
+    ),
+    densidad_cat = factor(densidad_cat, levels = c("Muy baja","Baja","Media","Alta","Muy alta"))
+  )
+
+#unimos ambas categorías
+centros_plot2 <- centros_plot %>%
+  left_join(tabla_cat, by = c("categoria_base", "estabilidad"))
+
+cols_tipicos <- c("Muy baja"="#1f77b4", "Baja"="#2ca02c", "Media"="#ff7f0e", "Alta"="#d62728", "Muy alta"="#9467bd")
+
+#Bubble plot
+
+ggplot(centros_plot2,
+       aes(x = np_rate, y = susp_rate, size = presentados, color = densidad_cat)) +
+  geom_point(alpha = 0.65) +
+  geom_text(aes(label = centro), check_overlap = TRUE, nudge_y = 0.002, size = 3) +
+  facet_wrap(~ estabilidad) +
+  scale_x_continuous(labels = percent_format(accuracy = 1)) +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  scale_color_manual(values = cols_tipicos, name = "Densidad celda\n(nº centros)") +
+  labs(
+    title = "Centros según no presentación y suspensos (color = densidad de su celda)",
+    x = "Tasa de no presentación (no_present / matriculados)",
+    y = "Tasa de suspensos (suspensos / presentados)",
+    size = "Presentados (peso)"
+  ) +
+  theme_minimal()
+
+
+#heatmap
+
+ggplot(tabla_cat, aes(x = estabilidad, y = categoria_base, fill = densidad_cat)) +
+  geom_tile() +
+  geom_text(aes(label = n_celda), size = 4) +
+  scale_fill_manual(values = cols_tipicos, name = "Densidad celda\n(nº centros)") +
+  labs(
+    title = "Distribución de centros por categoría y estabilidad",
+    x = "Estabilidad (brecha anual)",
+    y = "Categoría base"
+  ) +
+  theme_minimal()
+```
+
+El bubble plot muestra que la mayoría de centros se sitúa en la zona estable (tasas de no presentación entre el 8% y el 20%, tasas de suspenso entre el 10% y el 25%), lo que los clasifica como Intermedio/estándar.
+
+Los centros de mayor volumen, representados por burbujas más grandes, tienden a concentrarse en esa zona central, lo que sugiere que el tamaño no determina por sí solo el rendimiento. La Escuela Internacional de Posgrado aparece desplazada hacia la derecha (mayor no presentación) pero con baja tasa de suspenso, confirmando el patrón atípico que ya detectamos en las correlaciones.
+
+El heatmap muestra que la distribución es mayoritariamente estable: la mayor parte de los centros no presenta grandes oscilaciones entre cursos, lo que indica que los patrones de cada centro son estructurales y no circunstanciales.
+
+## Conclusiones del análisis por centros
+
+El análisis por centros permite extraer tres conclusiones claras.
+
+-   Primera: el patrón global (más no presentados implica peor rendimiento entre presentados) se confirma en prácticamente todos los centros, pero con intensidades muy distintas, lo que indica que el indicador tiene validez general pero no uniforme.
+
+-   Segunda: los centros con mayor efecto normalizado (Ingeniería de Edificación, Farmacia, Turismo y Finanzas) son candidatos prioritarios para programas de intervención temprana, ya que en ellos el porcentaje de no presentados anticipa con más fuerza el deterioro del rendimiento.
+
+-   Tercera: la Escuela Internacional de Posgrado es una excepción sistemática que no debe mezclarse con el análisis de grados, dado que sus dinámicas de evaluación y perfil de estudiante son estructuralmente distintos.
+
+# Análisis por asignaturas
+
+A continuación, realizamos el mismo proceso para estudiar las asignaturas en función de su rendimiento y estabilidad. El análisis se centra en asegurar que las asignaturas seleccionadas sean representativas y suficientemente robustas para calcular índices de correlación válidos.
+
+Usaremos los siguientes filtros:
+
+-   Mínimo de 5 cursos registrados: Para evitar que las correlaciones de Spearman sean inestables, ya que con pocos cursos las variaciones pueden generar resultados poco fiables. Con al menos 5 cursos, la correlación será más estable.
+
+-   Mínimo de 200 presentados y 300 matriculados: Si una asignatura tiene muy pocos presentados, cualquier cambio anual en la tasa de suspensos o no presentación puede verse como ruido. Permitimos asignaturas con menos de 30 estudiantes por curso de media, pero se requiere un número mínimo de matriculados y presentados para garantizar que los resultados sean representativos.
+
+-   Mínimo de 20 presentados por curso: Evitamos que los cursos con muy pocos presentados (5-10 estudiantes) inflen las correlaciones de manera artificial, ya que estos valores extremos podrían sesgar el análisis.
+
+-   IQR del porcentaje de no presentados \> 0.02 o desviación estándar \> 0: Si la tasa de no presentación no cambia entre años, esto puede generar empates masivos o hacer que la correlación sea inestable. Por lo tanto, solo se incluyen asignaturas cuya variabilidad en la tasa de no presentación sea significativa.
+
+-   Porcentaje de no presentados mayor al 15%: Se evitan asignaturas en las que la tasa de no presentación es siempre cercana a cero, ya que cualquier cambio anual en los datos podría ser considerado como un valor atípico.
+
+```{r}
+
+#Para evitar obtener valores que no nos sean útiles debido a un bajo número de no presentados, suspensos, matriculados... Definimos los siguientes filtros
+
+# - Mínimo de 5 cursos registrados. Con pocos cursos, spearman puede dar +-1 con facilidad. Con mínimo 5 cursos, spearman será estable
+
+# - Mínimo 200 presentados y 300 matriculados, si la asignatura tiene muy pocos presentados, cualquier cambio anual se puede ver como ruido. Recordamos que tenemos datos de 7 cursos. Estamos permitiendo asignaturas que tengan de media menos de 30 estudiantes por curso.
+
+# - Los cursos usados deben tener mínimo 20 presentados. Los cursos con 5/10 presentados generan 0%/100% fácilmente, inflando las correlaciones. Se comprobará que el peor curso tenga más de 20 presentados y que el 80% de todos los cursos tenga más de 20 presentados, para no eliminar la asignatura por un único curso.
+
+# - IQR del porcentaje de no presentados > 0.02 o SD>0. Si el %NP no cambia entre años, habrá empates masivos o el rho será inestable, haciendolo no interpretable.
+
+# - Porcentaje de no presentados mayor al 15%. Si siempre es muy cercano a 0, la correlación depende de años raros. Se evitan asignaturas donde la no presentación es insignificante.
+
+#Nos aseguramos de que  no vamos a obtener un error al hallar el índice de correlación.
+
+g_asig <- df %>%
+  mutate(
+    centro     = as.character(Centro),
+    asignatura = as.character(`código nombre asignatura`),
+    curso      = as.character(Curso)
+  ) %>%
+  group_by(centro, asignatura, curso) %>%
+  summarise(
+    matriculados   = sum(matriculados,   na.rm = TRUE),
+    presentados    = sum(presentados,    na.rm = TRUE),
+    no_presentados = sum(no_presentados, na.rm = TRUE),
+    superan        = sum(superan,        na.rm = TRUE),
+    suspensos      = sum(suspensos,      na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    pct_np     = ifelse(matriculados > 0, no_presentados / matriculados, NA_real_),
+    pct_apr_p  = ifelse(presentados  > 0, superan       / presentados,  NA_real_),
+    pct_susp_p = ifelse(presentados  > 0, suspensos     / presentados,  NA_real_)
+  )
+
+#Definimos funciones para asegurar que no obtengamos errores al hallar el rho 
+safe_rho <- function(x, y) {
+  ok <- complete.cases(x, y)
+  if (sum(ok) < 5) return(NA_real_)         
+  if (sd(x[ok]) == 0 || sd(y[ok]) == 0) return(NA_real_)
+  suppressWarnings(cor(x[ok], y[ok], method = "spearman"))
+}
+
+safe_p <- function(x, y) {
+  ok <- complete.cases(x, y)
+  if (sum(ok) < 5) return(NA_real_)
+  if (sd(x[ok]) == 0 || sd(y[ok]) == 0) return(NA_real_)
+  suppressWarnings(cor.test(x[ok], y[ok], method = "spearman", exact = FALSE)$p.value)
+}
+
+
+#Hallamos un resumen por centro y asignatura y aplicamos los filtros
+res_asig <- g_asig %>%
+  group_by(centro, asignatura) %>%
+  summarise(
+    #nº de cursos con pares completos
+    n_obs_apr  = sum(complete.cases(pct_np, pct_apr_p)),
+    n_obs_susp = sum(complete.cases(pct_np, pct_susp_p)),
+
+    #tamaños totales del periodo
+    presentados_tot   = sum(presentados, na.rm = TRUE),
+    matriculados_tot  = sum(matriculados, na.rm = TRUE),
+    no_present_tot    = sum(no_presentados, na.rm = TRUE),
+
+    #%NP medio del periodo (para el filtro del 5%)
+    np_rate_tot = ifelse(matriculados_tot > 0, no_present_tot / matriculados_tot, NA_real_),
+
+    #control de denominadores pequeños por año
+    prop_anyos_pres20   = mean(presentados >= 20, na.rm = TRUE),
+    min_presentados_anyo = suppressWarnings(min(presentados, na.rm = TRUE)),
+
+    #variación en %NP a lo largo de años
+    iqr_np = IQR(pct_np, na.rm = TRUE),
+    sd_np  = sd(pct_np, na.rm = TRUE),
+
+    #correlaciones
+    rho_apr = safe_rho(pct_np, pct_apr_p),
+    p_apr   = safe_p  (pct_np, pct_apr_p),
+
+    rho_susp = safe_rho(pct_np, pct_susp_p),
+    p_susp   = safe_p  (pct_np, pct_susp_p),
+
+    .groups = "drop"
+  )
+
+#Definimos los filtros para aplicarlos
+min_n_obs   <- 5
+min_matr_tot <- 300
+min_pres_tot <- 200
+min_pres_anyo <- 20
+min_iqr_np  <- 0.05
+min_np_rate <- 0.15
+
+res_asig_filtrado <- res_asig %>%
+  filter(
+    n_obs_apr  >= min_n_obs,
+    matriculados_tot >= min_matr_tot,
+    n_obs_susp >= min_n_obs,
+    presentados_tot >= min_pres_tot,
+    min_presentados_anyo >= min_pres_anyo,
+    prop_anyos_pres20 >= 0.8,
+    (iqr_np > min_iqr_np | sd_np > 0),
+    np_rate_tot >= min_np_rate,
+    !is.na(rho_apr),
+    !is.na(rho_susp)
+  ) %>% arrange(rho_apr)
+
+tail(res_asig_filtrado)
+```
+
+Como realizamos anteriormente, procedemos a mostrar las correlaciones obtenidas entre el porcentaje de no presentados y los porcentajes de suspensos y aprobados. Debido al gran número de asignaturas, las mostraremos por rangos para poder visualizar a alto nivel cuantas cumplen con la correlación
+
+```{r}
+#Orden fijo de intervalos para que el gráfico quede coherente
+orden_intervalos <- c(
+  "ρ ≤ -0.6",
+  "-0.6 < ρ ≤ -0.4",
+  "-0.4 < ρ ≤ -0.2",
+  "-0.2 < ρ < 0",
+  "ρ = 0",
+  "0 < ρ ≤ 0.2",
+  "0.2 < ρ ≤ 0.4",
+  "0.4 < ρ ≤ 0.6",
+  "ρ > 0.6"
+)
+
+make_plot_signed_intervals <- function(data, rho_col, expected = c("negative", "positive"), titulo) {
+  expected <- match.arg(expected)
+
+  tmp <- data %>%
+    filter(!is.na(.data[[rho_col]])) %>%
+    mutate(
+      rho = .data[[rho_col]],
+
+      # Intervalo con signo (vectorizado)
+      intervalo = case_when(
+        rho <= -0.6 ~ "ρ ≤ -0.6",
+        rho <= -0.4 ~ "-0.6 < ρ ≤ -0.4",
+        rho <= -0.2 ~ "-0.4 < ρ ≤ -0.2",
+        rho <  0    ~ "-0.2 < ρ < 0",
+        rho == 0    ~ "ρ = 0",
+        rho <= 0.2  ~ "0 < ρ ≤ 0.2",
+        rho <= 0.4  ~ "0.2 < ρ ≤ 0.4",
+        rho <= 0.6  ~ "0.4 < ρ ≤ 0.6",
+        TRUE        ~ "ρ > 0.6"
+      ),
+
+      #Comprobamos que cumple el signo esperado para darles colores diferentes
+      cumple = case_when(
+        rho == 0 ~ "No concluyente",
+        expected == "negative" & rho < 0 ~ "Cumple",
+        expected == "positive" & rho > 0 ~ "Cumple",
+        TRUE ~ "No cumple"
+      ),
+
+      #Etiqueta final, mostrando si cumple y el intervalo concreto
+      categoria = paste0(cumple, " | ", intervalo),
+
+      #Usamos un factor para ordenar.
+      cumple_ord = factor(cumple, levels = c("Cumple", "No cumple", "No concluyente")),
+      intervalo_ord = factor(intervalo, levels = orden_intervalos)
+    ) %>%
+    count(cumple, cumple_ord, intervalo_ord, categoria, name = "n") %>%
+    mutate(
+      total = sum(n),
+      pct = 100 * n / total,
+      etiqueta = paste0(n, " (", sprintf("%.1f", pct), "%)")
+    ) %>%
+    arrange(cumple_ord, intervalo_ord) %>%
+    mutate(categoria = factor(categoria, levels = categoria))
+
+  ymax <- max(tmp$n, na.rm = TRUE)
+
+cols_cumple <- c(
+  "No cumple"      = "#a8d5a2",  # verde suave
+  "No concluyente" = "#a8c4d4",  # azul grisáceo
+  "Cumple"         = "#e8a09a"   # rojo rosado
+)
+
+  ggplot(tmp, aes(x = categoria, y = n, fill = cumple)) +
+    geom_col() +
+    geom_text(aes(label = etiqueta), hjust = -0.10, size = 4) +
+    coord_flip() +
+    expand_limits(y = ymax * 1.15) +
+    scale_fill_manual(values = cols_cumple, breaks = c("Cumple", "No cumple", "No concluyente")) +
+    labs(
+      title = titulo,
+      x = "Categoría (Cumple/No cumple | intervalo de ρ con signo)",
+      y = "Número de (centro, asignatura)",
+      fill = ""
+    ) +
+    guides(fill = "none") +
+    theme_minimal()
+}
+
+#Aprobados, esperamos rho negativo
+make_plot_signed_intervals(
+  data = res_asig_filtrado,
+  rho_col = "rho_apr",
+  expected = "negative",
+  titulo = "NP vs Aprueban: distribución por intervalos con signo (n y %)"
+)
+
+#suspensos, esperamos rho positivo
+make_plot_signed_intervals(
+  data = res_asig_filtrado,
+  rho_col = "rho_susp",
+  expected = "positive",
+  titulo = "NP vs Suspensos: distribución por intervalos con signo (n y %)"
+)
+```
+
+Gráfica de NP vs Suspensos:
+
+La mayoría de las observaciones se encuentran en las categorías con correlación positiva, específicamente en los intervalos más altos de ρ \> 0.6 (29%), seguidos de intervalos entre 0.4 y 0.6 (17.8%), 0.2 y 0.4 (17.4%), y 0 \< ρ ≤ 0.2 (12.3%).
+
+El 9% de las observaciones se encuentran en el intervalo no concluyente, con ρ = 0.
+
+Las categorías con correlación negativa (No cumple con el patrón esperado de correlación negativa) están menos representadas, con porcentajes de entre 6% y 3% en los intervalos de -0.6 \< ρ ≤ -0.4, -0.4 \< ρ ≤ -0.2, y -0.2 \< ρ \< 0.
+
+Gráfica de NP vs Aprobados:
+
+Similar a la gráfica anterior, la mayor parte de las observaciones se agrupan en las categorías de correlación positiva, especialmente en los intervalos de ρ \> 0.6 (28.8%), 0.4 \< ρ ≤ 0.6 (17.2%), 0.2 \< ρ ≤ 0.4 (17.4%), y 0 \< ρ ≤ 0.2 (12.1%).
+
+Un 9.5% de los casos están en el intervalo no concluyente con ρ = 0.
+
+Las categorías de correlación negativa están igualmente representadas, aunque en menor medida que las positivas, con un 6.5% en el intervalo de ρ \< 0
+
+Ambas gráficas indican una predominancia de correlaciones positivas entre el porcentaje de no presentados y los porcentajes de aprobados o suspendidos, con más concentraciones en los intervalos altos de correlación.
+
+Es destacable que las categorías que no cumplen con la correlación esperada (positiva para los aprobados y negativa para los suspensos) tienen una presencia reducida en ambas gráficas.
+
+## Asignaturas más afectadas
+
+```{r}
+# Nos quedamos con las 9 asignaturas con mayor rho para suspensos y menor rho para aprobados
+top3_apr_afect <- res_asig_filtrado %>%
+  filter(!is.na(rho_apr)) %>%
+  arrange(rho_apr) %>%
+  slice_head(n = 9) %>%
+  mutate(tipo = "Aprueban", grupo = "Más afectadas (ρ muy negativo)", rho = rho_apr)
+
+top3_apr_nocumple <- res_asig_filtrado %>%
+  filter(!is.na(rho_apr)) %>%
+  arrange(desc(rho_apr)) %>%
+  slice_head(n = 9) %>%
+  mutate(tipo = "Aprueban", grupo = "Menos cumplen (ρ positivo)", rho = rho_apr)
+
+top3_susp_afect <- res_asig_filtrado %>%
+  filter(!is.na(rho_susp)) %>%
+  arrange(desc(rho_susp)) %>%
+  slice_head(n = 9) %>%
+  mutate(tipo = "Suspensos", grupo = "Más afectadas (ρ muy positivo)", rho = rho_susp)
+
+top3_susp_nocumple <- res_asig_filtrado %>%
+  filter(!is.na(rho_susp)) %>%
+  arrange(rho_susp) %>%
+  slice_head(n = 9) %>%
+  mutate(tipo = "Suspensos", grupo = "Menos cumplen (ρ negativo)", rho = rho_susp)
+
+#Mostramos gráficaente las asignaturas para facilitar su análisis
+top3_apr_afect_signed <- top3_apr_afect %>%
+  mutate(
+    etiqueta = paste0(centro, "\n", asignatura),
+    etiqueta = factor(etiqueta, levels = rev(unique(etiqueta)))
+  )
+
+ggplot(top3_apr_afect_signed, aes(x = rho, y = reorder(etiqueta, rho))) +
+  geom_point(aes(size = matriculados_tot), color = "red", alpha = 0.75) +
+  scale_size_continuous(range = c(3, 15)) +  # Ajuste el tamaño de los puntos
+  facet_grid(tipo ~ grupo, scales = "free_y") +
+  labs(
+    title = "Top 9 más afectadas (Aprobados)",
+    x = "ρ Spearman",
+    y = "Centro | Asignatura"
+  ) +
+  theme_minimal()
+
+#Lo mismo para suspensos
+top3_susp_afect_signed <- top3_susp_afect %>%
+  mutate(
+    etiqueta = paste0(centro, "\n", asignatura),
+    etiqueta = factor(etiqueta, levels = rev(unique(etiqueta)))
+  )
+
+ggplot(top3_susp_afect_signed, aes(x = rho, y = reorder(etiqueta, rho))) +
+  geom_point(aes(size = matriculados_tot), color = "red", alpha = 0.75) +
+  scale_size_continuous(range = c(3, 15)) +  # Ajuste el tamaño de los puntos
+  facet_grid(tipo ~ grupo, scales = "free_y") +
+  labs(
+    title = "Top 9 más afectadas (Suspensos)",
+    x = "ρ Spearman",
+    y = "Centro | Asignatura"
+  ) +
+  theme_minimal()
+
+```
+
+Las gráficas muestran las 12 asignaturas más afectadas por la correlación con los aprobados y suspensos. Vemos valores prácticamente perfectos, destacando la existencia de una asignatura con índice de correlación perfecto con el porcentaje de suspensos y otra para el porcentaje de aprobados.
+
+Ambas gráficas destacan asigna con un alto número de matriculados y correlaciones significativas entre la no presentación y los resultados finales
+
+## Diferencia temporal en las asignaturas
+
+Procedemos a analizar si en los años con más no presentados aumenta el porcentaje de suspensos
+
+```{r}
+#Al igual que hicimos con los centros, lo hacemos con las asignaturas
+k <- 2
+
+asig_2v2 <- g_asig %>%
+  filter(complete.cases(pct_np, pct_apr_p, pct_susp_p)) %>%
+  group_by(centro, asignatura) %>%
+  arrange(pct_np, .by_group = TRUE) %>%
+  summarise(
+    n_anyos = n(),
+
+    np_best    = mean(head(pct_np, k), na.rm = TRUE),
+    apr_best   = mean(head(pct_apr_p, k), na.rm = TRUE),
+    susp_best  = mean(head(pct_susp_p, k), na.rm = TRUE),
+
+    np_worst   = mean(tail(pct_np, k), na.rm = TRUE),
+    apr_worst   = mean(tail(pct_apr_p, k), na.rm = TRUE),
+    susp_worst  = mean(tail(pct_susp_p, k), na.rm = TRUE),
+
+    delta_np   = np_worst - np_best,
+    delta_apr  = apr_worst - apr_best,
+    delta_susp = susp_worst - susp_best,
+
+    best_years  = paste(head(curso, k), collapse = ", "),
+    worst_years = paste(tail(curso, k), collapse = ", "),
+
+    matriculados_tot = sum(matriculados, na.rm = TRUE),
+
+    .groups = "drop"
+  ) %>%
+  filter(n_anyos >= 2 * k)
+
+
+#filtramos delta_np > 0 para evitar divisiones por cero y efectos con signo invertido
+tabla_efectos_asig <- asig_2v2 %>%
+  filter(delta_np > 0) %>%
+  mutate(
+    delta_np_pp   = 100 * delta_np,
+    delta_apr_pp  = 100 * delta_apr,
+    delta_susp_pp = 100 * delta_susp,
+    eff_apr_por_1pp_np  = delta_apr / delta_np,
+    eff_susp_por_1pp_np = delta_susp / delta_np
+  ) %>%
+  transmute(
+    centro, asignatura, best_years, worst_years,
+    matriculados_tot,
+    delta_np_pp, delta_apr_pp, delta_susp_pp,
+    eff_apr_por_1pp_np, eff_susp_por_1pp_np
+  ) %>%
+  arrange(delta_apr_pp)
+
+tabla_efectos_asig %>% arrange(eff_apr_por_1pp_np)
+```
+
+Visualizamos los efectos normalizados por asignatura: cuántos puntos porcentuales cambian los aprobados y suspensos por cada 1pp extra de no presentados.
+
+```{r}
+#filtramos
+ef_asig_unico <- tabla_efectos_asig %>%
+  filter(is.finite(eff_susp_por_1pp_np))
+
+#hay muchas asignaturas, filtramos el top 10
+top10_susp <- ef_asig_unico %>%
+  slice_max(eff_susp_por_1pp_np, n = 10, with_ties = FALSE) %>%
+  mutate(grupo = "TOP 10 (más suben suspensos)")
+
+#Etiquetamos y ordenamos
+plot_susp <- top10_susp %>%
+  mutate(
+    etiqueta = paste0(centro, "\n", asignatura),
+    etiqueta = reorder(etiqueta, eff_susp_por_1pp_np)
+  )
+
+# Gráfica del top 10 para suspensos
+ggplot(plot_susp,
+       aes(x = etiqueta, y = eff_susp_por_1pp_np, fill = abs(eff_susp_por_1pp_np))) +
+  geom_col() +
+  coord_flip() +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.6) +
+  scale_fill_gradient(low = "#FFEBEB", high = "red", name = "|Efecto|") +
+  labs(
+    title = "TOP 10 Asignaturas: ΔSuspensos (pp) por cada 1pp de ΔNo presentados",
+    subtitle = "Asignaturas con mayor efecto positivo",
+    x = "Centro | Asignatura",
+    y = "Efecto (pp de suspensos por 1pp de NP)"
+  ) +
+  guides(fill = "none") +
+  theme_minimal(base_size = 11) +
+  theme(panel.grid.minor = element_blank(),
+        strip.text = element_text(face = "bold"))
+```
+
+Asignaturas donde se nota más:
+
+-   Introducción a la Economía (CC. Económicas): delta_np_pp +0,28, delta_apr_pp +6,72 → eff_apr = 24,14 (muy alto por denominador muy pequeño).
+
+-   Fauna (GCAM) (ETSIA): delta_np_pp +2,27, delta_apr_pp −25,89 → eff_apr = −11,39 y eff_susp = +11,39 (empeoramiento fuerte por cada +1pp de NP).
+
+-   Fisioterapia Respiratoria y Cardiovascular (Enfermería/Fisio/Podología): delta_np_pp +1,44, delta_apr_pp −14,52 → eff_apr = −10,12.
+
+Asignaturas donde se nota menos:
+
+La mayoría, porque la mediana es 0: o bien no cambian aprobados/suspensos, o el cambio en no presentados es tan pequeño que no marca tendencia estable.
+
+## Clasificación para cada asignatura
+
+```{r}
+
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+#Tomamos los mismos umbrales que tomamos para la clasificación por centro
+thr_susp_low  <- 0.10
+thr_susp_high <- 0.25
+
+thr_np_low    <- 0.08
+thr_np_high   <- 0.25
+
+thr_susp_gap  <- 0.10
+thr_np_gap    <- 0.10
+
+min_cursos_brecha <- 2
+
+
+#Hallamos los valores a comparar
+asig_curso <- g_asig %>%
+  group_by(centro, asignatura, curso) %>%
+  summarise(
+    matriculados_tot = sum(matriculados,    na.rm = TRUE),
+    presentados_tot  = sum(presentados,     na.rm = TRUE),
+    no_present_tot   = sum(no_presentados,  na.rm = TRUE),
+    superan_tot      = sum(superan,         na.rm = TRUE),
+    suspensos_tot    = sum(suspensos,       na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    np_rate   = ifelse(matriculados_tot > 0, no_present_tot / matriculados_tot, NA_real_),
+    susp_rate = ifelse(presentados_tot  > 0, suspensos_tot  / presentados_tot,  NA_real_),
+    pass_rate = ifelse(presentados_tot  > 0, superan_tot    / presentados_tot,  NA_real_)
+  )
+
+
+asig_sum <- asig_curso %>%
+  group_by(centro, asignatura) %>%
+  summarise(
+    matriculados = sum(matriculados_tot, na.rm = TRUE),
+    presentados  = sum(presentados_tot,  na.rm = TRUE),
+    no_present   = sum(no_present_tot,   na.rm = TRUE),
+    suspensos    = sum(suspensos_tot,    na.rm = TRUE),
+    superan      = sum(superan_tot,      na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    susp_rate = ifelse(presentados  > 0, suspensos  / presentados,  NA_real_),
+    pass_rate = ifelse(presentados  > 0, superan    / presentados,  NA_real_),
+    np_rate   = ifelse(matriculados > 0, no_present / matriculados, NA_real_),
+    pres_rate = ifelse(matriculados > 0, presentados / matriculados, NA_real_)
+  ) %>%
+  filter(is.finite(susp_rate), is.finite(np_rate))
+
+
+#Hallamos las diferencias
+brechas_asig <- asig_curso %>%
+  group_by(centro, asignatura) %>%
+  summarise(
+    susp_worst = suppressWarnings(max(susp_rate, na.rm = TRUE)),
+    susp_best  = suppressWarnings(min(susp_rate, na.rm = TRUE)),
+    susp_gap   = susp_worst - susp_best,
+
+    np_worst   = suppressWarnings(max(np_rate, na.rm = TRUE)),
+    np_best    = suppressWarnings(min(np_rate, na.rm = TRUE)),
+    np_gap     = np_worst - np_best,
+
+    n_cursos   = sum(is.finite(susp_rate) & is.finite(np_rate)),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    susp_gap = ifelse(n_cursos >= min_cursos_brecha, susp_gap, NA_real_),
+    np_gap   = ifelse(n_cursos >= min_cursos_brecha, np_gap,   NA_real_)
+  )
+
+#Clasificación final, exactamente igual que hicimos con los centros
+asig_full <- asig_sum %>%
+  left_join(brechas_asig, by = c("centro", "asignatura"))
+
+asig_clasif <- asig_full %>%
+  mutate(
+    susp_band = case_when(
+      susp_rate <= thr_susp_low  ~ "bajo",
+      susp_rate >= thr_susp_high ~ "alto",
+      TRUE                       ~ "medio"
+    ),
+    np_band = case_when(
+      np_rate <= thr_np_low  ~ "bajo",
+      np_rate >= thr_np_high ~ "alto",
+      TRUE                   ~ "medio"
+    ),
+    estabilidad = case_when(
+      !is.na(susp_gap) & !is.na(np_gap) &
+        (susp_gap >= thr_susp_gap | np_gap >= thr_np_gap) ~ "Volátil (gran brecha anual)",
+      !is.na(susp_gap) | !is.na(np_gap) ~ "Estable / moderado",
+      TRUE ~ "Sin serie suficiente"
+    ),
+    categoria_base = case_when(
+      susp_band == "bajo" & np_band == "bajo" ~ "Excelencia sostenible",
+      susp_band == "bajo" & np_band == "alto" ~ "Buen rendimiento, baja participación",
+      susp_band == "alto" & np_band == "bajo" ~ "Rendimiento frágil, buena participación",
+      susp_band == "alto" & np_band == "alto" ~ "Riesgo crítico",
+      TRUE                                    ~ "Intermedio / estándar"
+    ),
+    categoria = paste0(categoria_base, " | ", estabilidad)
+  ) %>%
+  arrange(categoria_base, desc(np_rate), desc(susp_rate))
+
+tabla_clasif_asig <- asig_clasif %>%
+  select(centro, asignatura, categoria_base, estabilidad, categoria,
+         np_rate, susp_rate, np_gap, susp_gap, presentados, matriculados)
+
+tabla_clasif_asig
+
+
+#Visualizamos el heatmap y el bubble plot
+
+#Filtramos al top 200 porque son demasiadas asignaturas
+N_top <- 200
+asig_vis <- asig_clasif %>%
+  arrange(desc(presentados)) %>%
+  slice_head(n = N_top)
+
+
+cols_cat <- c(
+  "Excelencia sostenible"                   = "#1b9e77",
+  "Buen rendimiento, baja participación"    = "#66a61e",
+  "Intermedio / estándar"                   = "#7570b3",
+  "Rendimiento frágil, buena participación" = "#e6ab02",
+  "Riesgo crítico"                          = "#d95f02"
+)
+
+ggplot(
+  asig_vis,
+  aes(x = np_rate, y = susp_rate, size = presentados, color = categoria_base)
+) +
+  geom_point(alpha = 0.65) +
+  facet_wrap(~ estabilidad) +
+  scale_color_manual(values = cols_cat, name = "Categoría base") +
+  scale_x_continuous(labels = percent_format(accuracy = 1)) +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  labs(
+    title = paste0("Asignaturas (TOP ", N_top, " por presentados): no presentación vs suspensos"),
+    x = "Tasa de no presentación (no_present / matriculados)",
+    y = "Tasa de suspensos (suspensos / presentados)",
+    size = "Presentados (peso)"
+  ) +
+  theme_minimal()
+
+
+tabla_cat_asig <- asig_clasif %>%
+  count(categoria_base, estabilidad, name = "n")
+
+ggplot(tabla_cat_asig, aes(x = estabilidad, y = categoria_base, fill = n)) +
+  geom_tile() +
+  geom_text(aes(label = n), size = 4) +
+  scale_fill_gradient(low = "mistyrose", high = "darkred", name = "Nº asignaturas") +
+  labs(
+    title = "Distribución de asignaturas por categoría y estabilidad",
+    x = "Estabilidad (brecha anual)",
+    y = "Categoría base"
+  ) +
+  theme_minimal()
+```
+
+El dato más destacado es que **Intermedio/estándar + Volátil** concentra 4.160 asignaturas, siendo la celda más poblada del gráfico. Esto indica que la mayoría de asignaturas tienen un rendimiento ni especialmente bueno ni malo, pero con oscilaciones importantes entre cursos, lo que sugiere que sus resultados dependen fuertemente del contexto de cada año (profesorado, convocatoria, composición del grupo) más que de características estructurales estables.
+
+Excelencia sostenible es la segunda categoría más frecuente con 5.490 asignaturas en total (2.587 estables + 742 sin serie suficiente + 2.161 volátiles). Que 2.161 de estas asignaturas sean volátiles es llamativo, es decir, tienen buenos resultados globales pero con grandes variaciones entre años, lo que significa que su excelencia no está garantizada y puede deteriorarse en cursos concretos.
+
+Riesgo crítico agrupa 437 asignaturas, de las cuales 407 son volátiles. Esto es relevante porque no solo tienen mal rendimiento, sino que además ese mal rendimiento fluctúa mucho, lo que dificulta predecir en qué cursos concretos el problema será más grave. Estas 407 asignaturas deberían ser las primeras en recibir atención institucional.
+
+Las categorías Rendimiento frágil, buena participación (52 asignaturas) y Buen rendimiento, baja participación (857 asignaturas) tienen presencia reducida, lo que indica que en la Universidad de Sevilla la participación y el rendimiento tienden a ir en la misma dirección.
+
+La columna Sin serie suficiente recoge asignaturas con menos de 2 cursos de datos, por lo que su clasificación de estabilidad no es interpretable, aunque sí lo es su categoría base.
+
+## Conclusiones del análisis por asignaturas
+
+El análisis por asignaturas confirma y matiza los resultados obtenidos a nivel global y por centros, aportando tres conclusiones principales.
+
+En primer lugar, el patrón de asociación entre no presentación y rendimiento se sostiene a nivel de asignatura individual. El 76% de las asignaturas que superan los filtros de robustez muestran correlaciones con el signo esperado, y casi el 47% de ellas presentan correlaciones fuertes (|ρ| > 0.4), lo que indica que el fenómeno ocurre dentro de cada asignatura a lo largo de los años.
+
+En segundo lugar, la clasificación por categorías revela que el problema más extendido no es el mal rendimiento persistente sino la volatilidad. La combinación Intermedio/estándar + Volátil es la más frecuente con 4.160 asignaturas, lo que significa que la mayor parte de la oferta académica de la Universidad de Sevilla no tiene resultados estructuralmente malos, pero tampoco estables. Esto sugiere que las intervenciones más eficientes no deberían centrarse únicamente en las asignaturas con peores tasas globales, sino también en aquellas cuyos resultados oscilan más, porque son las que generan más incertidumbre para el estudiante y para la institución.
+
+En tercer lugar, las 407 asignaturas clasificadas como Riesgo crítico + Volátil representan el colectivo de mayor urgencia: tienen simultáneamente alta no presentación, alto porcentaje de suspensos y grandes variaciones entre cursos. Son el subconjunto donde el indicador de no presentados tiene más valor predictivo y donde una intervención temprana, como tutorías preventivas o revisión del sistema de evaluación, tendría el mayor impacto potencial sobre el rendimiento del alumnado.
+
+# Análisis por curso
+
+Realizamos el mismo procedimiento per adaptado a los 7 cursos disponibles en el conjunto de datos.
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(scales)
+library(stringr)
+
+#creamos un dataframe para los cursos
+df0 <- df %>%
+  mutate(
+    centro     = str_trim(as.character(Centro)),
+    asignatura = str_trim(as.character(`código nombre asignatura`)),
+    curso      = str_trim(as.character(Curso)),
+    matriculados   = as.numeric(matriculados),
+    presentados    = as.numeric(presentados),
+    no_presentados = as.numeric(no_presentados),
+    superan        = as.numeric(superan),
+    suspensos      = as.numeric(suspensos)
+  ) %>%
+  filter(!is.na(centro), !is.na(asignatura), !is.na(curso))
+
+#agrupamos por (centro, asignatura, curso) 
+g_curso <- df0 %>%
+  group_by(curso, centro, asignatura) %>%
+  summarise(
+    matriculados   = sum(matriculados, na.rm = TRUE),
+    presentados    = sum(presentados, na.rm = TRUE),
+    no_presentados = sum(no_presentados, na.rm = TRUE),
+    superan        = sum(superan, na.rm = TRUE),
+    suspensos      = sum(suspensos, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    pct_np     = if_else(matriculados > 0, no_presentados / matriculados, NA_real_),
+    pct_apr_p  = if_else(presentados  > 0, superan       / presentados,  NA_real_),
+    pct_susp_p = if_else(presentados  > 0, suspensos     / presentados,  NA_real_)
+  )
+
+library(purrr)
+
+spearman_safe <- function(x, y) {
+  ok <- is.finite(x) & is.finite(y)
+  x <- x[ok]; y <- y[ok]
+  n <- length(x)
+  if (n < 30) return(tibble(rho = NA_real_, p = NA_real_, n = n)) 
+  if (sd(x) == 0 || sd(y) == 0) return(tibble(rho = NA_real_, p = NA_real_, n = n))
+  ct <- suppressWarnings(cor.test(x, y, method = "spearman", exact = FALSE))
+  tibble(rho = unname(ct$estimate), p = ct$p.value, n = n)
+}
+
+#filtramos los cursos con un mínimo de presetnados por asignatura para evitar daatos que nos introduzcan ruido
+min_pres_por_punto <- 20
+
+curso_cor <- g_curso %>%
+  filter(presentados >= min_pres_por_punto) %>%
+  group_by(curso) %>%
+  summarise(
+    n_puntos = sum(complete.cases(pct_np, pct_apr_p, pct_susp_p)),
+
+    tmp_apr  = list(spearman_safe(pct_np, pct_apr_p)),
+    tmp_susp = list(spearman_safe(pct_np, pct_susp_p)),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    rho_apr  = map_dbl(tmp_apr,  ~ .x$rho),
+    p_apr    = map_dbl(tmp_apr,  ~ .x$p),
+    n_apr    = map_int(tmp_apr,  ~ .x$n),
+    rho_susp = map_dbl(tmp_susp, ~ .x$rho),
+    p_susp   = map_dbl(tmp_susp, ~ .x$p),
+    n_susp   = map_int(tmp_susp, ~ .x$n)
+  ) %>%
+  select(-tmp_apr, -tmp_susp)
+
+
+curso_cor
+```
+
+Vemos gráficamente
+
+```{r}
+#NP vs Aprueban, esperamos que sea negativo
+ggplot(curso_cor, aes(x = reorder(curso, rho_apr), y = rho_apr, size = n_apr)) +
+  geom_point(alpha = 0.8) +
+  coord_flip() +
+  labs(
+    title = "Curso: ρ Spearman (%NP vs %Aprueban sobre presentados)",
+    x = "Curso", y = "ρ Spearman", size = "n puntos"
+  ) +
+  theme_minimal()
+
+#NP vs Suspensos, esperamos que sea positivo
+ggplot(curso_cor, aes(x = reorder(curso, rho_susp), y = rho_susp, size = n_susp)) +
+  geom_point(alpha = 0.8) +
+  coord_flip() +
+  labs(
+    title = "Curso: ρ Spearman (%NP vs %Suspensos sobre presentados)",
+    x = "Curso", y = "ρ Spearman", size = "n puntos"
+  ) +
+  theme_minimal()
+```
+
+Vemos que las correlaciones obtenidas son similares a las conseguidas con las asignaturas y cursos. La diferencia entre cursos es mínima.
+
+## Diferencia entre peores y mejores años
+
+```{r}
+k <- 2
+
+curso_agg <- g_curso %>%
+  group_by(curso) %>%
+  summarise(
+    matriculados_tot = sum(matriculados, na.rm = TRUE),
+    presentados_tot  = sum(presentados, na.rm = TRUE),
+    no_present_tot   = sum(no_presentados, na.rm = TRUE),
+    superan_tot      = sum(superan, na.rm = TRUE),
+    suspensos_tot    = sum(suspensos, na.rm = TRUE),
+    np_rate   = ifelse(matriculados_tot > 0, no_present_tot / matriculados_tot, NA_real_),
+    sup_rate  = ifelse(presentados_tot  > 0, superan_tot / presentados_tot, NA_real_),
+    susp_rate = ifelse(presentados_tot  > 0, suspensos_tot / presentados_tot, NA_real_),
+    .groups = "drop"
+  ) %>%
+  filter(is.finite(np_rate), is.finite(sup_rate), is.finite(susp_rate))
+
+curso_2v2 <- curso_agg %>%
+  arrange(np_rate) %>%
+  summarise(
+    np_best   = mean(head(np_rate, k)),
+    sup_best  = mean(head(sup_rate, k)),
+    susp_best = mean(head(susp_rate, k)),
+    np_worst   = mean(tail(np_rate, k)),
+    sup_worst  = mean(tail(sup_rate, k)),
+    susp_worst = mean(tail(susp_rate, k)),
+    delta_np   = np_worst - np_best,
+    delta_sup  = sup_worst - sup_best,
+    delta_susp = susp_worst - susp_best,
+    best_years  = paste(head(curso_agg$curso[order(curso_agg$np_rate)], k), collapse = ", "),
+    worst_years = paste(tail(curso_agg$curso[order(curso_agg$np_rate)], k), collapse = ", ")
+  ) %>%
+  mutate(
+    delta_np_pp   = 100 * delta_np,
+    delta_sup_pp  = 100 * delta_sup,
+    delta_susp_pp = 100 * delta_susp
+  )
+
+curso_2v2
+
+```
+
+Las diferencias son muy bajas, no podemos obtener mucha información al analizar la diferencia entre los cursos
+
+# Cambio de puntos entre mejor y peor año
+
+```{r}
+tabla_efecto_curso <- curso_2v2 %>%
+  transmute(
+    best_years, worst_years,
+    delta_np_pp, delta_sup_pp, delta_susp_pp,
+    eff_sup_por_1pp_np  = delta_sup / delta_np,
+    eff_susp_por_1pp_np = delta_susp / delta_np
+  )
+
+tabla_efecto_curso
+```
+
+El aumento por cada punto de no presentados es bajo.
+
+#Clasificar cursos
+
+```{r}
+#repetimos el mismo código que usamos para la clasificación de asignaturas
+
+thr_susp_low  <- 0.10
+thr_susp_high <- 0.25
+
+thr_np_low    <- 0.08
+thr_np_high   <- 0.25
+
+thr_susp_yoy  <- 0.10  
+thr_np_yoy    <- 0.10  
+
+
+
+curso_clasif <- curso_agg %>%
+  mutate(
+    curso = as.character(curso),
+    np_rate   = if (!"np_rate"   %in% names(.)) ifelse(matriculados_tot > 0, no_present_tot / matriculados_tot, NA_real_) else np_rate,
+    susp_rate = if (!"susp_rate" %in% names(.)) ifelse(presentados_tot  > 0, suspensos_tot  / presentados_tot,  NA_real_) else susp_rate,
+    sup_rate  = if (!"sup_rate"  %in% names(.)) ifelse(presentados_tot  > 0, superan_tot    / presentados_tot,  NA_real_) else sup_rate
+  ) %>%
+  arrange(curso) %>%
+  mutate(
+    delta_np_yoy   = abs(np_rate   - lag(np_rate)),
+    delta_susp_yoy = abs(susp_rate - lag(susp_rate))
+  ) %>%
+  mutate(
+    # bandas por umbrales absolutos
+    susp_band = case_when(
+      susp_rate <= thr_susp_low  ~ "bajo",
+      susp_rate >= thr_susp_high ~ "alto",
+      TRUE                       ~ "medio"
+    ),
+    np_band = case_when(
+      np_rate <= thr_np_low  ~ "bajo",
+      np_rate >= thr_np_high ~ "alto",
+      TRUE                   ~ "medio"
+    ),
+    # estabilidad por YoY absoluto (como "brecha" operativa)
+    estabilidad = case_when(
+      (is.finite(delta_susp_yoy) & delta_susp_yoy >= thr_susp_yoy) |
+        (is.finite(delta_np_yoy) & delta_np_yoy >= thr_np_yoy) ~ "Volátil (cambio interanual alto)",
+      TRUE ~ "Estable / moderado"
+    ),
+    categoria_base = case_when(
+      susp_band == "bajo" & np_band == "bajo" ~ "Excelencia sostenible",
+      susp_band == "bajo" & np_band == "alto" ~ "Buen rendimiento, baja participación",
+      susp_band == "alto" & np_band == "bajo" ~ "Rendimiento frágil, buena participación",
+      susp_band == "alto" & np_band == "alto" ~ "Riesgo crítico",
+      TRUE                                    ~ "Intermedio / estándar"
+    ),
+    categoria = paste0(categoria_base, " | ", estabilidad)
+  )
+
+curso_clasif %>%
+  select(curso, categoria_base, estabilidad, categoria,
+         np_rate, susp_rate, sup_rate, delta_np_yoy, delta_susp_yoy,
+         presentados_tot, matriculados_tot)
+
+#Bubble plot
+ggplot(curso_clasif, aes(x = np_rate, y = susp_rate, size = presentados_tot)) +
+  geom_point(alpha = 0.8) +
+  geom_text(aes(label = curso), vjust = -0.8, check_overlap = TRUE, size = 3) +
+  facet_wrap(~ estabilidad) +
+  scale_x_continuous(labels = percent_format(accuracy = 1)) +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  labs(
+    title = "Cursos: no presentación vs suspensos (tamaño = presentados totales)",
+    x = "Tasa no presentación (no_present / matriculados)",
+    y = "Tasa suspensos (suspensos / presentados)",
+    size = "Presentados totales"
+  ) +
+  theme_minimal()
+
+#Heatmap 
+tabla_cat_curso <- curso_clasif %>%
+  count(categoria_base, estabilidad, name = "n_cursos")
+
+ggplot(tabla_cat_curso, aes(x = estabilidad, y = categoria_base, fill = n_cursos)) +
+  geom_tile() +
+  geom_text(aes(label = n_cursos), size = 4) +
+  labs(
+    title = "Distribución de cursos por categoría y estabilidad",
+    x = "Estabilidad",
+    y = "Categoría base"
+  ) +
+  theme_minimal()
+
+```
+
+Ningún curso presenta una categoría alarmante, son estables en todos los niveles
+
+## Conclusiones del análisis por curso
+
+El análisis por curso presenta una limitación estructural importante: el dataset cubre únicamente 7 cursos académicos (2017-18 a 2023-24), lo que deja muy poco margen para extraer conclusiones robustas. Con solo 7 cursos, cualquier correlación o comparación temporal debe interpretarse con cautela, ya que pequeñas variaciones en un único curso pueden distorsionar las tendencias observadas.
+
+Dicho esto, los resultados son coherentes con el resto del análisis. Las correlaciones de Spearman por curso mantienen el mismo signo esperado que se observó a nivel global, por centro y por asignatura, con valores negativos para la relación entre no presentados y aprobados, y positivos para la relación con suspensos. La diferencia entre cursos es mínima, lo que indica que el patrón es estable en el tiempo y no está concentrado en años concretos.
+
+El contraste entre los 2 mejores y 2 peores años en términos de no presentación muestra deltas muy pequeños, inferiores a 3 puntos porcentuales tanto en aprobados como en suspensos. Esto es esperable, al agregar toda la universidad en un único dato por curso, las variaciones individuales de asignaturas y centros se compensan entre sí y el efecto global queda muy debilitado
+
+La clasificación final confirma que ningún curso presenta una categoría alarmante lo que no significa que no haya problemas, sino que esos problemas están distribuidos de forma homogénea entre cursos y solo son detectables cuando se desagrega al nivel de centro o asignatura, que es donde el análisis realmente aporta valor.
+
+# Análisis por rama de conocimiento
+
+Comenzamos añadiendo la rama de conocimiento asociada a cada asignatura.
+
+```{r}
+library(dplyr)
+library(stringr)
+
+titulaciones_unicas <- df %>%
+  transmute(
+    titulacion = str_squish(as.character(`Centro`))
+  ) %>%
+  filter(!is.na(titulacion), titulacion != "") %>%
+  distinct(titulacion) %>%
+  arrange(titulacion)
+
+write.csv(titulaciones_unicas, "titulaciones_unicas.csv", row.names = FALSE, fileEncoding = "UTF-8")
+
+titulaciones_unicas
+```
+
+```{r}
+#Asignamos la rama de conocimiento a cada asignatura en función del centro donde se imparta
+library(dplyr)
+library(stringr)
+library(tibble)
+
+rama_por_centro <- tribble(
+  ~Centro, ~rama,
+  "Centro Universitario EUSA", "Ciencias Sociales y Jurídicas",
+  "Centro Universitario de Osuna", "Ciencias Sociales y Jurídicas",
+  "Centro de Enfermería \"Cruz Roja\"", "Ciencias de la Salud",
+  "Centro de Enfermería \"San Juan de Dios\"", "Ciencias de la Salud",
+  "E.T.S. Ingeniería Informática", "Ingeniería y Arquitectura",
+  "E.T.S. de Arquitectura", "Ingeniería y Arquitectura",
+  "E.T.S. de Ingeniería", "Ingeniería y Arquitectura",
+  "E.T.S. de Ingeniería Agronómica", "Ingeniería y Arquitectura",
+  "E.T.S. de Ingeniería de Edificación", "Ingeniería y Arquitectura",
+  "Escuela Internacional de Posgrado", "Interdisciplinar / Posgrado",
+  "Escuela Politécnica Superior", "Ingeniería y Arquitectura",
+  "Facultad Enfermería, Fisioter. y Podolog", "Ciencias de la Salud",
+  "Facultad de Bellas Artes", "Artes y Humanidades",
+  "Facultad de Biología", "Ciencias",
+  "Facultad de CC. Económ. y Empresariales", "Ciencias Sociales y Jurídicas",
+  "Facultad de Ciencias de la Educación", "Ciencias Sociales y Jurídicas",
+  "Facultad de Ciencias del Trabajo", "Ciencias Sociales y Jurídicas",
+  "Facultad de Comunicación", "Ciencias Sociales y Jurídicas",
+  "Facultad de Derecho", "Ciencias Sociales y Jurídicas",
+  "Facultad de Enfermería, Fisioterapia y Podología", "Ciencias de la Salud",
+  "Facultad de Farmacia", "Ciencias de la Salud",
+  "Facultad de Filología", "Artes y Humanidades",
+  "Facultad de Filosofía", "Artes y Humanidades",
+  "Facultad de Física", "Ciencias",
+  "Facultad de Geografía e Historia", "Artes y Humanidades",
+  "Facultad de Matemáticas", "Ciencias",
+  "Facultad de Medicina", "Ciencias de la Salud",
+  "Facultad de Odontología", "Ciencias de la Salud",
+  "Facultad de Psicología", "Ciencias de la Salud",
+  "Facultad de Química", "Ciencias",
+  "Facultad de Turismo y Finanzas", "Ciencias Sociales y Jurídicas"
+)
+
+#normalizamos para unir sin fallos por espacios/mayúsculas
+rama_por_centro2 <- rama_por_centro %>%
+  mutate(centro_key = str_squish(str_to_lower(Centro))) %>%
+  select(centro_key, rama)
+
+#añadir la rema
+df <- df %>%
+  mutate(centro_key = str_squish(str_to_lower(as.character(Centro)))) %>%
+  left_join(rama_por_centro2, by = "centro_key") %>%
+  select(-centro_key)
+
+#comprobamos que no se quedan asignaturas sin rama
+centros_sin_rama <- df %>%
+  filter(is.na(rama) | rama == "") %>%
+  distinct(Centro) %>%
+  arrange(Centro)
+
+centros_sin_rama
+```
+
+Procedemos a analizar los datos por rama de conocimiento tal y como se ha realizado anteriormente por centro, asignatura y curso.
+
+En este caso ponemos todo el código y análisis seguido
+
+```{r}
+
+df_rama <- df %>%
+  mutate(
+    rama  = str_squish(as.character(rama)),
+    curso = str_trim(as.character(Curso)),
+    pct_presentados    = ifelse(matriculados > 0, presentados / matriculados, NA_real_),
+    pct_no_presentados = ifelse(matriculados > 0, no_presentados / matriculados, NA_real_),
+    pct_superan        = ifelse(presentados  > 0, superan / presentados, NA_real_),
+    pct_suspensos      = ifelse(presentados  > 0, suspensos / presentados, NA_real_)
+  ) %>%
+  filter(!is.na(rama), rama != "", !is.na(curso))
+
+
+#correlación por rama
+safe_cor_test <- function(x, y) {
+  ok <- complete.cases(x, y)
+  if (sum(ok) < 5) return(list(rho = NA_real_, p = NA_real_))
+  if (sd(x[ok]) == 0 || sd(y[ok]) == 0) return(list(rho = NA_real_, p = NA_real_))
+  ct <- suppressWarnings(cor.test(x[ok], y[ok], method = "spearman", exact = FALSE))
+  list(rho = unname(ct$estimate), p = ct$p.value)
+}
+
+res_cor_rama <- df_rama %>%
+  group_by(rama) %>%
+  summarise(
+    n = sum(complete.cases(pct_no_presentados, pct_superan, pct_suspensos)),
+    tmp1 = list(safe_cor_test(pct_no_presentados, pct_superan)),
+    tmp2 = list(safe_cor_test(pct_no_presentados, pct_suspensos)),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    rho_superan   = vapply(tmp1, function(z) z$rho, numeric(1)),
+    p_superan     = vapply(tmp1, function(z) z$p,   numeric(1)),
+    rho_suspensos = vapply(tmp2, function(z) z$rho, numeric(1)),
+    p_suspensos   = vapply(tmp2, function(z) z$p,   numeric(1))
+  ) %>%
+  select(-tmp1, -tmp2) %>%
+  arrange(desc(n))
+
+res_cor_rama
+
+#visualización gráfica de correlación por rama
+ggplot(
+  res_cor_rama %>%
+    filter(!is.na(rho_superan)) %>%
+    arrange(rho_superan) %>%
+    mutate(rama = factor(rama, levels = rama)),
+  aes(x = rama, y = rho_superan, size = n, color = abs(rho_superan))
+) +
+  geom_point(alpha = 0.85) +
+  coord_flip() +
+  scale_size_continuous(name = "n (observaciones)", range = c(2, 10)) +
+  scale_color_gradient(low = "mistyrose", high = "darkred", name = "|rho|") +
+  labs(
+    title = "Ramas: ρ Spearman (%NP vs %Superan sobre presentados)",
+    x = "Rama", y = "ρ Spearman"
+  ) +
+  theme_minimal()
+
+ggplot(
+  res_cor_rama %>%
+    filter(!is.na(rho_suspensos)) %>%
+    arrange(desc(rho_suspensos)) %>%
+    mutate(rama = factor(rama, levels = rama)),
+  aes(x = rama, y = rho_suspensos, size = n, color = abs(rho_suspensos))
+) +
+  geom_point(alpha = 0.85) +
+  coord_flip() +
+  scale_size_continuous(name = "n (observaciones)", range = c(2, 10)) +
+  scale_color_gradient(low = "mistyrose", high = "darkred", name = "|rho|") +
+  labs(
+    title = "Ramas: ρ Spearman (%NP vs %Suspensos sobre presentados)",
+    x = "Rama", y = "ρ Spearman"
+  ) +
+  theme_minimal()
+
+
+#Aumento de no presentado entre peores y mejores años.
+rama_anyo <- df_rama %>%
+  group_by(rama, curso) %>%
+  summarise(
+    matriculados_tot = sum(matriculados, na.rm = TRUE),
+    presentados_tot  = sum(presentados,  na.rm = TRUE),
+    no_present_tot   = sum(no_presentados, na.rm = TRUE),
+    superan_tot      = sum(superan, na.rm = TRUE),
+    suspensos_tot    = sum(suspensos, na.rm = TRUE),
+    np_rate   = ifelse(matriculados_tot > 0, no_present_tot / matriculados_tot, NA_real_),
+    sup_rate  = ifelse(presentados_tot  > 0, superan_tot / presentados_tot,  NA_real_),
+    susp_rate = ifelse(presentados_tot  > 0, suspensos_tot / presentados_tot, NA_real_),
+    .groups = "drop"
+  ) %>%
+  filter(is.finite(np_rate), is.finite(sup_rate), is.finite(susp_rate))
+
+k <- 2
+
+rama_2v2 <- rama_anyo %>%
+  group_by(rama) %>%
+  arrange(np_rate, .by_group = TRUE) %>%
+  summarise(
+    n_anyos = n(),
+    np_best   = mean(head(np_rate, k), na.rm = TRUE),
+    sup_best  = mean(head(sup_rate, k), na.rm = TRUE),
+    susp_best = mean(head(susp_rate, k), na.rm = TRUE),
+    np_worst   = mean(tail(np_rate, k), na.rm = TRUE),
+    sup_worst  = mean(tail(sup_rate, k), na.rm = TRUE),
+    susp_worst = mean(tail(susp_rate, k), na.rm = TRUE),
+    delta_np   = np_worst - np_best,
+    delta_sup  = sup_worst - sup_best,
+    delta_susp = susp_worst - susp_best,
+    best_years  = paste(head(curso, k), collapse = ", "),
+    worst_years = paste(tail(curso, k), collapse = ", "),
+    .groups = "drop"
+  ) %>%
+  filter(n_anyos >= 2*k) %>%
+  arrange(desc(n_anyos))
+
+rama_2v2
+
+#diferencia visualmente
+ggplot(
+  rama_2v2 %>%
+    arrange(delta_sup) %>%
+    mutate(rama = factor(rama, levels = rama)),
+  aes(rama, delta_sup, fill = abs(delta_sup))
+) +
+  geom_col(alpha = 0.9) +
+  coord_flip() +
+  scale_y_continuous(labels = percent) +
+  scale_fill_gradient(low = "mistyrose", high = "darkred", name = "|Δ|") +
+  labs(
+    title = "Ramas: Δ %Superan (2 peores años NP - 2 mejores años NP)",
+    x = "Rama", y = "Δ (proporción)"
+  ) +
+  guides(fill = "none") +
+  theme_minimal()
+
+ggplot(
+  rama_2v2 %>%
+    arrange(desc(delta_susp)) %>%
+    mutate(rama = factor(rama, levels = rama)),
+  aes(rama, delta_susp, fill = abs(delta_susp))
+) +
+  geom_col(alpha = 0.9) +
+  coord_flip() +
+  scale_y_continuous(labels = percent) +
+  scale_fill_gradient(low = "mistyrose", high = "darkred", name = "|Δ|") +
+  labs(
+    title = "Ramas: Δ %Suspensos (2 peores años NP - 2 mejores años NP)",
+    x = "Rama", y = "Δ (proporción)"
+  ) +
+  guides(fill = "none") +
+  theme_minimal()
+
+#aumento porcentualmente por cada punto de no presentados
+tabla_efecto_normalizado_rama <- rama_2v2 %>%
+  filter(delta_np > 0) %>%
+  mutate(
+    eff_susp_por_1pp_np = delta_susp / delta_np,
+    eff_sup_por_1pp_np  = delta_sup  / delta_np
+  ) %>%
+  transmute(
+    rama, best_years, worst_years,
+    delta_np_pp   = 100 * delta_np,
+    delta_susp_pp = 100 * delta_susp,
+    delta_sup_pp  = 100 * delta_sup,
+    eff_susp_por_1pp_np,
+    eff_sup_por_1pp_np
+  ) %>%
+  arrange(desc(eff_susp_por_1pp_np))
+
+tabla_efecto_normalizado_rama
+
+plot_eff <- tabla_efecto_normalizado_rama %>%
+  filter(is.finite(eff_susp_por_1pp_np)) %>%
+  mutate(rama_lab = make.unique(as.character(rama)))
+
+top5_eff <- plot_eff %>%
+  slice_max(eff_susp_por_1pp_np, n = 5) %>%
+  arrange(eff_susp_por_1pp_np) %>%
+  mutate(rama_lab = factor(rama_lab, levels = rama_lab))
+
+ggplot(top5_eff, aes(x = rama_lab, y = eff_susp_por_1pp_np, fill = abs(eff_susp_por_1pp_np))) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_gradient(low = "mistyrose", high = "darkred", name = "|Efecto|") +
+  labs(
+    title = "TOP 5 ramas: mayor efecto (ΔSuspensos por 1pp de ΔNP)",
+    x = "Rama", y = "Efecto (pp/pp)"
+  ) +
+  guides(fill = "none") +
+  theme_minimal()
+
+bot5_eff <- plot_eff %>%
+  slice_min(eff_susp_por_1pp_np, n = 5) %>%
+  arrange(eff_susp_por_1pp_np) %>%
+  mutate(rama_lab = factor(rama_lab, levels = rama_lab))
+
+ggplot(bot5_eff, aes(x = rama_lab, y = eff_susp_por_1pp_np, fill = abs(eff_susp_por_1pp_np))) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_gradient(low = "mistyrose", high = "darkred", name = "|Efecto|") +
+  labs(
+    title = "BOTTOM 5 ramas: menor efecto (puede ser 0 o negativo)",
+    x = "Rama", y = "Efecto (pp/pp)"
+  ) +
+  guides(fill = "none") +
+  theme_minimal()
+
+#Clasificación 
+thr_susp_low  <- 0.10
+thr_susp_high <- 0.25
+thr_np_low    <- 0.08
+thr_np_high   <- 0.25
+thr_susp_gap  <- 0.10
+thr_np_gap    <- 0.10
+min_cursos_brecha <- 2
+
+rama_sum <- rama_anyo %>%
+  group_by(rama) %>%
+  summarise(
+    matriculados = sum(matriculados_tot, na.rm = TRUE),
+    presentados  = sum(presentados_tot,  na.rm = TRUE),
+    no_present   = sum(no_present_tot,   na.rm = TRUE),
+    suspensos    = sum(suspensos_tot,    na.rm = TRUE),
+    superan      = sum(superan_tot,      na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    susp_rate = ifelse(presentados > 0, suspensos / presentados, NA_real_),
+    pass_rate = ifelse(presentados > 0, superan   / presentados, NA_real_),
+    np_rate   = ifelse(matriculados > 0, no_present / matriculados, NA_real_),
+    pres_rate = ifelse(matriculados > 0, presentados / matriculados, NA_real_)
+  ) %>%
+  filter(!is.na(susp_rate), !is.na(np_rate))
+
+gaps_rama <- rama_anyo %>%
+  group_by(rama) %>%
+  summarise(
+    susp_worst = max(susp_rate, na.rm = TRUE),
+    susp_best  = min(susp_rate, na.rm = TRUE),
+    susp_gap   = susp_worst - susp_best,
+    np_worst = max(np_rate, na.rm = TRUE),
+    np_best  = min(np_rate, na.rm = TRUE),
+    np_gap   = np_worst - np_best,
+    n_cursos = sum(!is.na(susp_rate) & !is.na(np_rate)),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    susp_gap = ifelse(n_cursos >= min_cursos_brecha, susp_gap, NA_real_),
+    np_gap   = ifelse(n_cursos >= min_cursos_brecha, np_gap,   NA_real_)
+  )
+
+rama_full <- rama_sum %>%
+  left_join(gaps_rama, by = "rama")
+
+rama_clasif <- rama_full %>%
+  mutate(
+    susp_band = case_when(
+      susp_rate <= thr_susp_low  ~ "bajo",
+      susp_rate >= thr_susp_high ~ "alto",
+      TRUE                       ~ "medio"
+    ),
+    np_band = case_when(
+      np_rate <= thr_np_low  ~ "bajo",
+      np_rate >= thr_np_high ~ "alto",
+      TRUE                   ~ "medio"
+    ),
+    estabilidad = case_when(
+      !is.na(susp_gap) & !is.na(np_gap) &
+        (susp_gap >= thr_susp_gap | np_gap >= thr_np_gap) ~ "Volátil (gran brecha anual)",
+      !is.na(susp_gap) | !is.na(np_gap) ~ "Estable / moderado",
+      TRUE ~ "Sin serie suficiente"
+    ),
+    categoria_base = case_when(
+      susp_band == "bajo" & np_band == "bajo" ~ "Excelencia sostenible",
+      susp_band == "bajo" & np_band == "alto" ~ "Buen rendimiento, baja participación",
+      susp_band == "alto" & np_band == "bajo" ~ "Rendimiento frágil, buena participación",
+      susp_band == "alto" & np_band == "alto" ~ "Riesgo crítico",
+      TRUE                                    ~ "Intermedio / estándar"
+    ),
+    categoria = paste0(categoria_base, " | ", estabilidad)
+  ) %>%
+  arrange(categoria_base, desc(np_rate), desc(susp_rate))
+
+rama_clasif %>%
+  select(rama, categoria_base, estabilidad, categoria,
+         np_rate, susp_rate, np_gap, susp_gap, presentados, matriculados)
+
+#Bubble plot
+ggplot(rama_clasif, aes(x = np_rate, y = susp_rate, size = presentados, color = presentados)) +
+  geom_point(alpha = 0.75) +
+  geom_text(aes(label = rama), check_overlap = TRUE, vjust = -0.8, size = 3) +
+  facet_wrap(~ estabilidad) +
+  scale_x_continuous(labels = percent_format(accuracy = 1)) +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  scale_color_gradient(low = "mistyrose", high = "darkred", name = "Presentados") +
+  labs(
+    title = "Ramas: no presentación vs suspensos (tamaño = presentados, color rojizo por volumen)",
+    x = "Tasa no presentación (NP/matriculados)",
+    y = "Tasa suspensos (suspensos/presentados)",
+    size = "Presentados (peso)"
+  ) +
+  theme_minimal()
+
+#Heatmap
+tabla_cat_rama <- rama_clasif %>%
+  count(categoria_base, estabilidad, name = "n")
+
+ggplot(tabla_cat_rama, aes(x = estabilidad, y = categoria_base, fill = n)) +
+  geom_tile() +
+  geom_text(aes(label = n), size = 4) +
+  scale_fill_gradient(low = "mistyrose", high = "darkred", name = "Nº ramas") +
+  labs(
+    title = "Distribución de ramas por categoría y estabilidad",
+    x = "Estabilidad",
+    y = "Categoría base"
+  ) +
+  theme_minimal() +
+  theme(panel.grid = element_blank())
+```
+
+Si nos fijamos en los índices de correlación, vemos que se mantiene la relación vista anteriormente en las asigntauras, centros y cursos. En este caso, la correlación es muy similar entre las ramas de conocimiento (-0.38, -0.45). Pese a ello, en la parte de posgrado, vemos que se mantiene sin cumplir la relación.
+
+En cuanto a la diferencia entre años, el aumento no llega al 3% para el porcentaje de aprobado y suspensos. Aun así, estos resultados son lógicos, ya que, el número de no presentados no varía mucho entre cursos.
+
+En cuanto al aumento del porcentaje de suspensos y aprobados por cada punto de no presentados, vemos que el efecto es ligero (0.33 - 0.73). De nuevo, manteniendo una ligera relación.
+
+Todas las ramas tienen un rendimiento intermedio/estándar y una estabilidad moderada.
+
+#Conclusiones
+
+En primer lugar, el porcentaje de no presentados sí aparece sistemáticamente asociado a peor rendimiento entre quienes finalmente se presentan al examen. Cuando se calcula el éxito o el fracaso sobre presentados, la correlación de Spearman muestra un patrón coherente y de magnitud moderada: a mayor no presentación, menor porcentaje de aprobados y mayor porcentaje de suspensos. El 'no presentado' funciona razonablemente bien como señal de riesgo académico o de dificultad percibida: cuando aumenta, el grupo que se presenta al examen tiende a rendir peor.
+
+A nivel global, la relación se mantiene. al desagregar por centro, la dirección del efecto se conserva en casi todos, aunque cambia la intensidad: hay centros donde el indicador 'funciona' mejor (correlaciones más extremas y deltas más marcados entre años con pocos y muchos no presentados) y otros donde es débil o incluso se invierte. Que existan excepciones es una señal de que el fenómeno no es universal y, por tanto, no conviene clasificarlo como 'indicador de dificultad'.
+
+En segundo lugar, el contraste '2 mejores años vs 2 peores años' dentro de cada centro aporta una lectura muy útil: cuando un centro pasa a sus años con más no presentados, tiende a bajar el porcentaje de aprobados y a subir el de suspensos entre presentados, típicamente en varios puntos porcentuales. Además, al normalizar el efecto (puntos de suspenso por cada +1 pp de no presentados), se observa que en muchos centros el incremento de suspensos acompaña al incremento de no presentados con una magnitud apreciable, aunque los valores extremos suelen aparecer cuando el cambio en no presentados es pequeño (denominador pequeño, pendiente inflada), lo que exige cuidado
+
+En tercer lugar, el bloque de asignaturas confirma que, cuando se exigen condiciones de robustez (suficientes cursos, volumen de estudiantes, variabilidad real de la no presentación y mínimos de presentados por año), el patrón general tiende a mantenerse.
+
+Por último, en la clasificación por centros, cursos y ramas, la idea de separar nivel (participación y rendimiento) de estabilidad permite describir no solo cómo está un centro, sino cuán consistente es en el tiempo. Con esos umbrales, la lectura final queda: la mayoría se concentra en escenarios intermedios o de buen rendimiento con estabilidad moderada, y los casos realmente preocupantes son pocos.
+
+En suma, la evidencia apoya que el porcentaje de no presentados es un buen indicador de riesgo académico (y, en parte, de dificultad percibida), pero no permite afirmar causalidad ni 'dificultad' como propiedad intrínseca de la asignatura o del centro. La recomendación del análisis es tratarlo como señal de alerta contextual, reforzándolo con controles por curso/centro y cautela con años o grupos de bajos ejemplos.
+
+# Reglas de asociación
+
+Aplicamos reglas de asociación para descubrir patrones frecuentes entre el nivel de no presentación, el rendimiento (suspensos) y las características del centro/rama. Las reglas se extraen con el algoritmo Apriori.
+
+```{r}
+library(arules)
+
+#Discretizamos variables continuas en niveles
+df_rules <- df %>%
+  filter(!is.na(pct_no_presentados), !is.na(pct_suspensos), !is.na(Centro)) %>%
+  mutate(
+    NP_nivel = cut(pct_no_presentados,
+                   breaks = c(-Inf, 0.08, 0.20, Inf),
+                   labels = c("NP_Bajo", "NP_Medio", "NP_Alto"),
+                   right = TRUE),
+    Susp_nivel = cut(pct_suspensos,
+                     breaks = c(-Inf, 0.15, 0.35, Inf),
+                     labels = c("Susp_Bajo", "Susp_Medio", "Susp_Alto"),
+                     right = TRUE),
+    Apr_nivel = cut(pct_superan,
+                    breaks = c(-Inf, 0.50, 0.75, Inf),
+                    labels = c("Apr_Bajo", "Apr_Medio", "Apr_Alto"),
+                    right = TRUE),
+    Tamano = cut(matriculados,
+                 breaks = c(-Inf, 50, 150, Inf),
+                 labels = c("Pequeño", "Mediano", "Grande"),
+                 right = TRUE),
+    Centro_fct = as.factor(Centro)
+  ) %>%
+  filter(!is.na(NP_nivel), !is.na(Susp_nivel), !is.na(Apr_nivel))
+
+#añadimos la rama
+if ("rama" %in% names(df_rules)) {
+  df_rules$Rama_fct <- as.factor(df_rules$rama)
+  cols_trans <- c("NP_nivel", "Susp_nivel", "Apr_nivel", "Tamano", "Centro_fct", "Rama_fct")
+} else {
+  cols_trans <- c("NP_nivel", "Susp_nivel", "Apr_nivel", "Tamano", "Centro_fct")
+}
+
+#Convertimos a transacciones para ejecutar a priori
+trans <- as(df_rules[, cols_trans], "transactions")
+cat("Número de transacciones:", length(trans), "\n")
+
+
+reglas <- apriori(
+  trans,
+  parameter = list(supp = 0.01, conf = 0.50, minlen = 2, maxlen = 4),
+  control = list(verbose = FALSE)
+)
+cat("Total de reglas encontradas:", length(reglas), "\n")
+
+#filtramos las reglas por los valores que buscamos para nuestro estudio
+reglas_susp_alto <- subset(reglas, rhs %in% "Susp_nivel=Susp_Alto")
+reglas_np_alto   <- subset(reglas, rhs %in% "NP_nivel=NP_Alto")
+
+cat("Reglas con Susp_Alto como consecuente:", length(reglas_susp_alto), "\n")
+cat("Reglas con NP_Alto como consecuente:", length(reglas_np_alto), "\n")
+
+#top 10 reglas por lift
+cat("\n=== TOP 10 REGLAS -> Suspensos Alto (por lift) ===\n")
+if (length(reglas_susp_alto) > 0) {
+  inspect(head(sort(reglas_susp_alto, by = "lift"), 10))
+} else {
+  cat("No se encontraron reglas suficientes. Prueba bajar el soporte.\n")
+}
+
+cat("\n=== TOP 10 REGLAS -> NP Alto (por lift) ===\n")
+if (length(reglas_np_alto) > 0) {
+  inspect(head(sort(reglas_np_alto, by = "lift"), 10))
+} else {
+  cat("No se encontraron reglas suficientes.\n")
+}
+
+#Reglas bidireccionalesc--> ¿NP Alto implica Susp Alto y viceversa?
+reglas_np_susp <- subset(reglas,
+                         lhs %in% "NP_nivel=NP_Alto" & rhs %in% "Susp_nivel=Susp_Alto")
+reglas_susp_np <- subset(reglas,
+                         lhs %in% "Susp_nivel=Susp_Alto" & rhs %in% "NP_nivel=NP_Alto")
+
+cat("\n=== NP_Alto -> Susp_Alto ===\n")
+if (length(reglas_np_susp) > 0) inspect(reglas_np_susp)
+cat("\n=== Susp_Alto -> NP_Alto ===\n")
+if (length(reglas_susp_np) > 0) inspect(reglas_susp_np)
+```
+
+Se encuentran 1,674 reglas en total, lo que indica una gran cantidad de relaciones entre las variables.
+
+Solo hay 3 reglas con "Susp_Alto" como consecuente, lo que puede indicar que el número de condiciones que llevan a un nivel alto de suspensos es más limitado.
+
+Se observan 30 reglas con "NP_Alto" como consecuente, que sugieren que una asignatura con un nivel alto de no presentados podría tener una correlación con otras características del dataset.
+
+Comentamos las reglas con una mayor lift.
+
+{Apr_nivel=Apr_Medio, Tamano=Mediano, Rama_fct=Ingeniería y Arquitectura} =\> {NP_nivel=NP_Alto}
+
+Soporte: 1.27% de las transacciones cumplen con esta combinación.
+
+Confianza: Si una asignatura está en nivel medio de aprobados, tiene un tamaño mediano en su centro y está en la rama de Ingeniería y Arquitectura, hay una probabilidad del 82.71% de que también esté en nivel alto de no presentados.
+
+Lift: 3.90, lo que indica que la relación entre estas condiciones y un alto nivel de no presentados es 3.9 veces más fuerte que si fueran independientes.
+
+Segunda regla:
+
+{Susp_nivel=Susp_Alto, Tamano=Grande} =\> {NP_nivel=NP_Alto}
+
+Soporte: 1.11% de las transacciones cumplen con esta combinación.
+
+Confianza: Si una asignatura tiene un nivel alto de suspensos y su tamaño de centro es grande, hay un 67,7% de probabilidad de que también esté en nivel alto de no presentados.
+
+Lift: 3.65, mostrando una relación fuerte.
+
+Reglas en las que basamos la investigación:
+
+{Susp_nivel=Susp_Alto} =\> {NP_nivel=NP_Alto}
+
+Soporte: 3,33% de las transacciones cumplen con esta combinación.
+
+Confianza: Si una asignatura tiene un nivel alto de suspensos y , hay un 81.72% de probabilidad de que también esté en nivel alto de no presentados.
+
+Lift: 3.85, lo que también muestra una relación fuerte.
+
+{Susp_nivel=Susp_Alto, Apr_nivel=Apr_Bajo} =\> {NP_nivel=NP_Alto}
+
+Soporte: 1,11% de las transacciones cumplen con esta combinación.
+
+Confianza: Si una asignatura tiene un nivel alto de suspensos y un nivel bajo de aprobados, hay un 62.22% de probabilidad de que también esté en nivel alto de no presentados.
+
+Lift: 2,93
+
+No se encontraron reglas bidireccionalessobre NP alto y suspenso alto o viceversa.
+
+En resumen, el análisis de estas reglas proporciona información valiosa sobre cómo ciertos factores (como el nivel de aprobados, tamaño del centro y rama de estudio) pueden estar relacionados con un alto nivel de no presentación y suspensos. Por tanto, refuerzan la correlación entre el porcentaje de no presentados y el porcentaje de suspensos y aprobados.
+
+Esto puede ser útil para predecir el comportamiento de los estudiantes y diseñar intervenciones académicas.
+
+Creamos un modelo lineal ponderado para predecir el porcentaje de suspensos dado el porcentaje de no presentados y el centro.
+
+```{r}
+#preparamos los datos
+df_modelo <- df %>%
+  mutate(
+    centro = as.character(Centro),
+    anyo   = as.character(Curso)
+  ) %>%
+  group_by(centro, anyo) %>%
+  summarise(
+    matriculados_tot = sum(matriculados, na.rm = TRUE),
+    presentados_tot  = sum(presentados, na.rm = TRUE),
+    no_present_tot   = sum(no_presentados, na.rm = TRUE),
+    suspensos_tot    = sum(suspensos, na.rm = TRUE),
+    superan_tot      = sum(superan, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    np_rate   = ifelse(matriculados_tot > 0, no_present_tot / matriculados_tot, NA_real_),
+    susp_rate = ifelse(presentados_tot  > 0, suspensos_tot / presentados_tot, NA_real_),
+    pass_rate = ifelse(presentados_tot  > 0, superan_tot / presentados_tot, NA_real_),
+    centro    = factor(centro)
+  ) %>%
+  filter(!is.na(susp_rate), !is.na(np_rate), presentados_tot > 0)
+
+#modelo lineal ponderado
+m_lm <- lm(
+  susp_rate ~ np_rate + centro,
+  data = df_modelo,
+  weights = presentados_tot
+)
+
+cat("=== MODELO LINEAL PONDERADO ===\n")
+summary(m_lm)
+
+#visualizamos predicciones del modelo vs datos reales
+df_modelo$pred_lm <- predict(m_lm, type = "response")
+
+ggplot(df_modelo, aes(x = np_rate, y = susp_rate)) +
+  geom_point(alpha = 0.4, aes(size = presentados_tot)) +
+  geom_line(aes(y = pred_lm), color = "blue", linewidth = 1) +
+  scale_x_continuous(labels = scales::percent) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Modelo lineal: % suspensos ~ % no presentados + centro",
+    x = "% No presentados (sobre matriculados)",
+    y = "% Suspensos (sobre presentados)",
+    size = "Presentados"
+  ) +
+  theme_minimal()
+
+#ejemplo de predicciones
+cat("\n=== PREDICCIONES DE EJEMPLO ===\n")
+nuevos <- data.frame(
+  np_rate = c(0.05, 0.15, 0.30),
+  centro = factor(
+    rep(levels(df_modelo$centro)[9], 3),
+    levels = levels(df_modelo$centro)
+  )
+)
+nuevos$pred_susp <- predict(m_lm, newdata = nuevos, type = "response")
+print(nuevos)
+```
+
+## Evaluación del modelo regresor lineal
+
+A continuación, evaluamos el modelo lineal ponderado cuantitativamente.
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+#métricas
+resid_lm   <- df_modelo$susp_rate - df_modelo$pred_lm
+rmse_lm    <- sqrt(mean(resid_lm^2, na.rm = TRUE))
+mae_lm     <- mean(abs(resid_lm), na.rm = TRUE)
+r2_lm      <- summary(m_lm)$r.squared
+adj_r2_lm  <- summary(m_lm)$adj.r.squared
+
+
+cat("   EVALUACIÓN DEL MODELO LINEAL PONDERADO\n")
+
+cat(sprintf("  R²:          %.4f\n", r2_lm))
+cat(sprintf("  R² ajustado: %.4f\n", adj_r2_lm))
+cat(sprintf("  RMSE:        %.4f\n", rmse_lm))
+cat(sprintf("  MAE:         %.4f\n", mae_lm))
+
+# Tabla resumen
+tabla_eval <- data.frame(
+  Metrica = c("R²", "R² ajustado", "RMSE", "MAE"),
+  Valor   = c(r2_lm, adj_r2_lm, rmse_lm, mae_lm)
+)
+tabla_eval
+
+#vemos los residuos
+df_modelo$resid_lm <- resid_lm
+
+#residuos vs predicho
+ggplot(df_modelo, aes(x = pred_lm, y = resid_lm)) +
+  geom_point(alpha = 0.4) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  geom_smooth(method = "loess", se = FALSE, color = "blue", linewidth = 0.8) +
+  labs(
+    title = "Residuos vs Predicho — Modelo Lineal",
+    x = "Predicción (susp_rate)",
+    y = "Residuo (observado - predicho)"
+  ) +
+  theme_minimal()
+
+#histograma de residuos
+ggplot(data.frame(residuo = resid_lm), aes(x = residuo)) +
+  geom_histogram(bins = 30, fill = "blue", alpha = 0.6) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  labs(
+    title = "Distribución de residuos — Modelo Lineal",
+    x = "Residuo", y = "Frecuencia"
+  ) +
+  theme_minimal()
+
+#QQ-plot
+qqnorm(resid_lm, main = "QQ-Plot: Modelo Lineal")
+qqline(resid_lm, col = "blue")
+
+# Coeficiente de np_rate
+cat("\n=== EFECTO DE np_rate ===\n")
+cat(sprintf("Coef = %.4f (por cada +1pp de NP, susp_rate cambia %.2f pp)\n",
+            coef(m_lm)["np_rate"], 100 * coef(m_lm)["np_rate"]))
+```
+
+El modelo tiene un R² de 0.977 y un R² ajustado de 0.973, lo que indica un excelente ajuste a los datos. El RMSE de 0.0108 y el MAE de 0.0078 son muy bajos, lo que sugiere que el modelo realiza predicciones precisas. En resumen, el modelo es muy efectivo y preciso.
+
+# Conclusiones finales
+
+El análisis realizado sobre los datos académicos de la Universidad de Sevilla entre 2017 y 2024 permite responder con claridad a la pregunta central del trabajo.
+
+**El porcentaje de no presentados no puede considerarse un indicador de dificultad intrínseca de una asignatura, pero sí funciona como un indicador fiable de riesgo académico.** La dificultad es una propiedad de la asignatura, mientras que el riesgo académico es una señal observable que anticipa peores resultados sin explicar por qué se producen.
+
+La evidencia que sostiene esta conclusión es consistente a todos los niveles de análisis. A nivel global, las correlaciones de Spearman muestran una asociación moderada pero robusta entre el porcentaje de no presentados y el rendimiento de quienes sí se examinan (rho ≈ -0.42 para aprobados y rho ≈ +0.43 para suspensos, ambos con p \< 2.2e-16). A nivel de centro, el patrón se mantiene en casi todos los casos y el análisis temporal confirma que los años con más no presentados son también, en promedio, los años con más suspensos. A nivel de asignatura, el 76% de las asignaturas que superan los filtros de robustez muestran correlaciones con el signo esperado. A nivel de rama, el efecto es homogéneo entre Artes y Humanidades, Ciencias, Ciencias de la Salud, Ciencias Sociales e Ingeniería, con la única excepción sistemática del Posgrado.
+
+Las reglas de asociación refuerzan este diagnóstico: la combinación rama Ingeniería + tamaño mediano + aprobados medios predice NP alto con un 82.7% de confianza (lift = 3.90), lo que convierte ese perfil en un criterio de alerta que la institución podría activar.
+
+El modelo de regresión lineal ponderado, con un R² de 0.977, demuestra que el porcentaje de no presentados y el centro explican conjuntamente casi toda la variabilidad del porcentaje de suspensos, y que por cada punto porcentual adicional de no presentación el porcentaje de suspensos entre presentados sube aproximadamente 0.27 puntos porcentuales, controlando por centro.
+
+**Implicación práctica principal:** la Universidad de Sevilla podría incorporar el porcentaje de no presentados como variable de alerta temprana en sus sistemas de seguimiento de titulaciones, priorizando la intervención en los centros con mayor efecto normalizado (Ingeniería de Edificación, Farmacia, Turismo y Finanzas) y en asignaturas de la rama de Ingeniería con tamaño mediano y rendimiento medio, que es la combinación que las reglas de asociación identifican como de mayor riesgo.
+
+**Limitación principal:** la relación observada es asociativa, no causal. Factores no recogidos en los datos, como cambios en el sistema de evaluación, el impacto del COVID-19 en los cursos 2019-21 o el perfil socioeconómico del alumnado, pueden explicar parte de la variación observada. Para convertir este análisis en una herramienta de gestión sólida sería necesario incorporar los datos de satisfacción del tercer dataset disponible y cruzarlos con las tasas de abandono por titulación, lo que permitiría distinguir si el problema de la no presentación es de motivación, de dificultad percibida o de circunstancias externas al proceso de aprendizaje.
