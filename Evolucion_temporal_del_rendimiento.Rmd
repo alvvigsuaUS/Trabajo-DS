@@ -1,6 +1,5 @@
 ---
 title: "Evolución temporal del rendimiento y abandono"
-author: "Nombre Apellido – Grupo X"
 date: "`r Sys.Date()`"
 output:
   pdf_document:
